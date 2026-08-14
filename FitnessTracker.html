@@ -334,18 +334,26 @@ select option{background:#18181c}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="3" height="16"/><rect x="6" y="4" width="1" height="16"/><rect x="9" y="4" width="2" height="16"/><rect x="13" y="4" width="1" height="16"/><rect x="16" y="4" width="3" height="16"/><rect x="21" y="4" width="2" height="16"/></svg>
         Código
       </button>
-      <button onclick="openCamera()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font)">
+      <button onclick="openCamera()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font)" title="Sacar foto del plato">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Foto
+        Cámara
       </button>
-      <button onclick="openNutritionLabel()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font)" title="Leer etiqueta nutricional del envase">
+      <button onclick="openGallery()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font)" title="Elegir de la galería (sirve para screenshots de Rappi/PedidosYa)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        Galería
+      </button>
+      <button onclick="openNutritionLabel()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font)" title="Leer etiqueta nutricional del envase (cámara)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
         Etiqueta
       </button>
+      <button onclick="openNutritionLabelGallery()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 8px;color:var(--text3);cursor:pointer;font-size:12px;font-family:var(--font)" title="Etiqueta nutricional desde la galería">🖼</button>
     </div>
   </div>
   <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)">
+  <!-- Sin capture: iOS ofrece galería (con capture fuerza cámara y oculta la galería) -->
+  <input type="file" id="foto-input-gallery" accept="image/*" style="display:none" onchange="onPhotoSelected(this)">
   <input type="file" id="label-input" accept="image/*" capture="environment" style="display:none" onchange="onNutritionLabelSelected(this)">
+  <input type="file" id="label-input-gallery" accept="image/*" style="display:none" onchange="onNutritionLabelSelected(this)">
   <div id="nudge-box" style="padding:0 18px"></div>
   <div id="plan-box" style="padding:0 18px"></div>
   <!-- ENTRADA UNIFICADA: buscador + registro conversacional -->
@@ -928,11 +936,20 @@ select option{background:#18181c}
     </div>
     <div id="foto-loading" style="text-align:center;padding:24px 0;display:none">
       <div style="font-size:32px;margin-bottom:10px">🤖</div>
-      <div style="font-size:14px;color:var(--text2)">Analizando la foto...</div>
+      <div style="font-size:14px;color:var(--text2)" id="foto-loading-msg">Analizando la foto...</div>
+    </div>
+    <div id="foto-error" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px" id="foto-error-msg"></div>
+      <button class="btn primary wide" id="foto-retry-btn" onclick="retryFotoAnalysis()">Reintentar</button>
+      <button class="btn wide" style="margin-top:8px" onclick="closeFotoModal()">Cerrar</button>
     </div>
     <div id="foto-result" style="display:none">
       <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5">Gemini estimó estos valores. Revisalos y editá lo que sea necesario antes de guardar.</div>
       <div class="form-group"><label class="form-label">Plato / alimento</label><input type="text" class="form-input" id="foto-nombre"></div>
+      <div id="foto-fuente" style="display:none;font-size:11px;margin:-6px 0 10px"></div>
+      <!-- Preguntas de identidad/preparación (nunca sobre la porción) -->
+      <div id="foto-preguntas" style="display:none;background:var(--surface2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px"></div>
       <!-- Componentes del plato (platos mixtos) -->
       <div id="foto-componentes" style="display:none;background:var(--surface2);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:12px"></div>
       <div class="form-group">
@@ -4246,103 +4263,227 @@ function dismissCameraTip(){
   if(el){el.style.display="none";if(el._callback)el._callback();}
 }
 
+// ─── COMPRESIÓN DE IMÁGENES ───────────────────────────────────────
+// Una foto de iPhone son 3-5MB y el base64 suma ~33% → se subían 5-7MB por foto.
+// Redimensionar a 1024px y exportar JPEG q=0.8 deja ~200-400KB. Además, pasar por
+// canvas convierte HEIC a JPEG automáticamente.
+async function compressImage(file, maxDim=1024, quality=0.8){
+  const readAsDataURL=()=>new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result);
+    r.onerror=()=>rej(new Error("read"));
+    r.readAsDataURL(file);
+  });
+  const draw=(src,w,h)=>{
+    const scale=Math.min(1,maxDim/Math.max(w,h));
+    const cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+    const canvas=document.createElement("canvas");
+    canvas.width=cw;canvas.height=ch;
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(src,0,0,cw,ch);
+    const dataUrl=canvas.toDataURL("image/jpeg",quality);
+    return{b64:dataUrl.split(",")[1],mime:"image/jpeg"};
+  };
+  // Preferimos createImageBitmap: respeta la orientación EXIF (fotos rotadas de iPhone)
+  if(typeof createImageBitmap==="function"){
+    try{
+      const bmp=await createImageBitmap(file,{imageOrientation:"from-image"});
+      const out=draw(bmp,bmp.width,bmp.height);
+      bmp.close?.();
+      return out;
+    }catch(e){/* sigue por el camino del <img> */}
+  }
+  const dataUrl=await readAsDataURL();
+  try{
+    const img=await new Promise((res,rej)=>{
+      const i=new Image();
+      i.onload=()=>res(i);
+      i.onerror=()=>rej(new Error("decode"));
+      i.src=dataUrl;
+    });
+    return draw(img,img.naturalWidth||img.width,img.naturalHeight||img.height);
+  }catch(e){
+    // Fallback: el browser no pudo decodificar (HEIC sin soporte) → mandar el original
+    console.warn("compressImage: sin decodificación, se envía el original");
+    return{b64:dataUrl.split(",")[1],mime:file.type||"image/jpeg"};
+  }
+}
+
+// Estado de progreso en el modal de foto ("Comprimiendo..." → "Analizando...")
+function setFotoProgress(msg){
+  const el=document.getElementById("foto-loading-msg");
+  if(el)el.textContent=msg;
+}
+function showFotoLoading(msg){
+  document.getElementById("foto-modal").classList.add("show");
+  document.getElementById("foto-loading").style.display="block";
+  document.getElementById("foto-result").style.display="none";
+  const err=document.getElementById("foto-error");
+  if(err)err.style.display="none";
+  setFotoProgress(msg||"Procesando...");
+}
+function hideFotoLoading(){document.getElementById("foto-loading").style.display="none";}
+// Error con opción de reintentar, en vez de cerrar el modal sin explicación
+let _fotoRetryFn=null;
+function showFotoError(msg,retryFn){
+  hideFotoLoading();
+  _fotoRetryFn=retryFn||null;
+  const err=document.getElementById("foto-error");
+  if(!err){showToast(msg,"err");document.getElementById("foto-modal").classList.remove("show");return;}
+  document.getElementById("foto-modal").classList.add("show");
+  document.getElementById("foto-result").style.display="none";
+  err.style.display="block";
+  document.getElementById("foto-error-msg").textContent=msg;
+  document.getElementById("foto-retry-btn").style.display=_fotoRetryFn?"block":"none";
+}
+function retryFotoAnalysis(){
+  const fn=_fotoRetryFn;
+  _fotoRetryFn=null;
+  const err=document.getElementById("foto-error");
+  if(err)err.style.display="none";
+  if(fn)fn();
+}
+
+// geminiPost con timeout: sin esto una request colgada deja el modal girando para siempre
+async function geminiPostTimeout(key,body,ms=45000){
+  return Promise.race([
+    geminiPost(key,body),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))
+  ]);
+}
+
 function openCamera(){
   showCameraTip(()=>{
     document.getElementById("foto-input").value="";
     document.getElementById("foto-input").click();
   });
 }
+function openGallery(){
+  const el=document.getElementById("foto-input-gallery");
+  el.value="";el.click();
+}
+function openNutritionLabelGallery(){
+  if(!getGeminiKey()){showToast("Primero guardá tu API Key de Gemini en Perfil","err");return;}
+  const el=document.getElementById("label-input-gallery");
+  el.value="";el.click();
+}
 function openNutritionLabel(){ if(!getGeminiKey()){showToast("Primero guardá tu API Key de Gemini en Perfil","err");return;} document.getElementById("label-input").value=""; document.getElementById("label-input").click(); }
 async function onNutritionLabelSelected(input){
   const file=input.files&&input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    const b64=e.target.result.split(",")[1],mime=file.type||"image/jpeg";
-    document.getElementById("foto-modal").classList.add("show");
-    document.getElementById("foto-loading").style.display="block";
-    document.getElementById("foto-result").style.display="none";
+  if(!getGeminiKey()){showToast("Primero guardá tu API Key de Gemini en Perfil","err");return;}
+  const run=async()=>{
+    showFotoLoading("Comprimiendo imagen...");
     const prompt=`Analizá esta foto de una tabla de información nutricional impresa en un envase. Extraé los valores nutricionales y convertí TODO a base 100g (si los valores están por porción, hacé la conversión matemáticamente usando el tamaño de porción declarado). Respondé SOLO con JSON válido con estas claves exactas: nombre_plato (string, nombre del producto), porcion_gramos (número, siempre 100), calorias_100g (número), proteinas_100g (número), carbohidratos_100g (número), grasas_100g (número). Si no podés leer la etiqueta devolvé {"error":"no_label"}.`;
     try{
-      const key=getGeminiKey();
-      const res=await geminiPost(key,{contents:[{parts:[{inlineData:{mimeType:mime,data:b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
-      document.getElementById("foto-loading").style.display="none";
-      if(!res||!res.ok){showToast(geminiErrorMsg(res),"err");document.getElementById("foto-modal").classList.remove("show");return;}
+      const img=await compressImage(file);
+      setFotoProgress("Analizando con IA...");
+      const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+      if(!res||!res.ok){showFotoError(geminiErrorMsg(res),run);return;}
       const json=await res.json();
       const text=json?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if(!text){showToast("Gemini no respondió","err");document.getElementById("foto-modal").classList.remove("show");return;}
+      if(!text){showFotoError("Gemini no respondió",run);return;}
       const data=JSON.parse(text);
-      if(data.error==="no_label"){showToast("No pude leer la etiqueta nutricional","err");document.getElementById("foto-modal").classList.remove("show");return;}
+      if(data.error==="no_label"){showFotoError("No pude leer la etiqueta nutricional. Probá con más luz y que la tabla ocupe el encuadre.",run);return;}
+      hideFotoLoading();
       showFotoResult(data,"despensa");
-    }catch(err){document.getElementById("foto-loading").style.display="none";document.getElementById("foto-modal").classList.remove("show");showToast("Error al procesar la imagen","err");console.error(err);}
+    }catch(err){
+      showFotoError(err.message==="timeout"?"La IA tardó demasiado (45s). Probá de nuevo.":"Error al procesar la imagen",run);
+      console.error(err);
+    }
   };
-  reader.readAsDataURL(file);
+  run();
 }
 
 function onPhotoSelected(input){
   const file = input.files && input.files[0];
   if(!file) return;
   if(!getGeminiKey()){ showToast("Primero guardá tu API Key de Gemini en Perfil","err"); return; }
-  const reader = new FileReader();
-  reader.onload = async function(e){
-    const dataUrl = e.target.result;
-    const base64 = dataUrl.split(",")[1];
-    const mimeType = file.type || "image/jpeg";
-    document.getElementById("foto-modal").classList.add("show");
-    document.getElementById("foto-loading").style.display = "block";
-    document.getElementById("foto-result").style.display = "none";
-    const data = await analyzePhotoWithGemini(base64, mimeType);
-    document.getElementById("foto-loading").style.display = "none";
-    if(data) showFotoResult(data);
-    else document.getElementById("foto-modal").classList.remove("show");
+  const run=async()=>{
+    showFotoLoading("Comprimiendo imagen...");
+    try{
+      const img=await compressImage(file);
+      setFotoProgress("Analizando con IA...");
+      const data=await analyzePhotoWithGemini(img.b64,img.mime);
+      if(!data)return; // analyzePhotoWithGemini ya mostró el error con reintento
+      hideFotoLoading();
+      showFotoResult(data);
+    }catch(err){
+      showFotoError(err.message==="timeout"?"La IA tardó demasiado (45s). Probá de nuevo.":"Error al procesar la imagen",run);
+      console.error(err);
+    }
   };
-  reader.readAsDataURL(file);
+  _photoRetryRun=run;
+  run();
 }
+let _photoRetryRun=null;
 
 async function analyzePhotoWithGemini(base64, mimeType){
   const key = getGeminiKey();
   const calibFactor = getCalibFactor();
-  const prompt = `Sos un nutricionista experto en estimación de porciones a partir de fotos de platos.
+  const prompt = `Sos un nutricionista experto en estimación de porciones a partir de imágenes, especializado en el mercado argentino.
 
-INSTRUCCIONES (seguí este orden exacto):
+PASO 0 — QUÉ TIPO DE IMAGEN ES (decidilo primero, cambia todo lo demás):
 
-1. REFERENCIAS DE TAMAÑO: Buscá en la imagen cualquier objeto de referencia visible — plato estándar (~24cm), tenedor, cuchara, mano, moneda, botella u otro objeto conocido. Usá eso para calibrar la escala real antes de estimar.
+A) SCREENSHOT DE APP/WEB DE DELIVERY O MENÚ (Rappi, PedidosYa, MercadoPago Delivery, web de un local, carta de un restaurante): se reconoce por interfaz de app, botones, precios en pesos, nombre del producto en texto, descripción.
+   → LEÉ EL TEXTO y usalo como FUENTE PRINCIPAL: nombre exacto del producto, descripción, ingredientes listados, gramaje o tamaño si aparece ("Doble carne 180g", "Combo grande"). El texto es MUCHO más confiable que estimar visualmente de la foto promocional (que además suele ser una foto de catálogo, no el plato real).
+   → fuente = "texto_del_screenshot"
 
-2. RAZONAMIENTO PASO A PASO: Para cada componente del plato, razoná en voz alta: "Este componente ocupa X% del plato/área, eso equivale a aproximadamente Yg porque..." Sé explícito con tu lógica antes de dar el número.
+B) PRODUCTO DE CADENA CONOCIDA (identificado por el texto del screenshot, por packaging visible o por aspecto inconfundible):
+   → USÁ LOS VALORES NUTRICIONALES OFICIALES PUBLICADOS de ese producto específico, NO estimes desde la imagen. Un Big Mac, un Whopper, un cuarto de libra, un frappuccino tienen valores publicados y conocidos: usalos.
+   → Cadenas internacionales: McDonald's, Burger King, KFC, Subway, Starbucks, Domino's, Wendy's.
+   → Cadenas ARGENTINAS (prioritario, conocelas): Mostaza, El Noble, Kentucky, Grido, Freddo, Havanna, Café Martínez, Bonafide, Rapanui, Almacén de Pizzas, Ugi's, Pizza Hut Argentina, Dean & Dennys, Tienda de Café, La Farola.
+   → fuente = "valores_oficiales_marca"
 
-3. COMPONENTES SEPARADOS: Si el plato tiene varios alimentos (proteína, carbohidrato, verdura, salsa), identificalos y estimá cada uno por separado. Luego sumá para el total.
+C) FOTO REAL DE UN PLATO (casero o de restaurante): estimación visual con el método de abajo.
+   → fuente = "estimacion_visual"
 
-4. ESTIMACIÓN CONCRETA + RANGO: Después del razonamiento, comprometete con tu mejor estimación específica como porcion_gramos (el número que considerás más probable, no el promedio aritmético del rango). Luego indicá porcion_min y porcion_max como límites de incertidumbre. El rango refleja que podría ser más o menos, pero porcion_gramos es tu apuesta concreta.
+MÉTODO PARA ESTIMACIÓN VISUAL (caso C):
+1. REFERENCIAS DE TAMAÑO: buscá objetos de referencia — plato estándar (~24cm), tenedor, cuchara, mano, moneda, vaso, botella. Calibrá la escala real antes de estimar.
+2. RAZONAMIENTO PASO A PASO: por cada componente, razoná "ocupa X% del plato → aproximadamente Yg porque...".
+3. COMPONENTES SEPARADOS: identificá proteína, carbohidrato, verdura, salsa por separado y estimá cada uno.
+4. ESTIMACIÓN CONCRETA + RANGO: comprometete con tu mejor estimación específica en porcion_gramos (tu apuesta concreta, no el promedio del rango), y dejá porcion_min/porcion_max como incertidumbre.
 
-5. MACROS: Para la porción total, calculá los macros por 100g como promedio ponderado de los componentes.
+AJUSTE CRÍTICO — COMIDA DE RESTAURANTE:
+Si la comida es de restaurante, rotisería, bar o delivery (NO casera), asumí preparación comercial: MÁS aceite, manteca, azúcar y sal que la versión casera del mismo plato. Típicamente 20-40% MÁS calorías que la receta casera equivalente. Subestimar comida de restaurante es el error más común — no lo cometas. Las milanesas se fríen en abundante aceite, las pastas llevan más manteca y crema, las carnes se sellan con más grasa.
+
+PREGUNTAS (opcional, máximo 2 — SOLO sobre QUÉ es o CÓMO está preparado):
+Si hay ambigüedad que cambia SIGNIFICATIVAMENTE los macros (>15%), devolvé un array "preguntas". Cada pregunta con 2 a 4 opciones concretas, y para CADA opción los macros completos resultantes (así el recálculo es instantáneo sin volver a consultarte).
+Ejemplos VÁLIDOS: "¿La milanesa es frita o al horno?", "¿El pollo es con piel o sin piel?", "¿Es leche entera o descremada?", "¿La hamburguesa es casera o de cadena?", "¿El café lleva azúcar?".
+PROHIBIDO preguntar por cantidad, peso, gramos o tamaño de porción — eso lo estimás vos siempre, nunca lo preguntes.
+Marcá con "default": true la opción MÁS PROBABLE según lo que ves (y que debe coincidir con los valores del nivel raíz).
+Si no hay ambigüedad relevante, NO devuelvas preguntas (omitilas o array vacío) — no agregues fricción porque sí.
 
 Respondé SOLO con JSON válido con exactamente estas claves:
 {
   "nombre_plato": string,
-  "razonamiento": string (resumen breve del análisis de escala y componentes),
+  "fuente": "valores_oficiales_marca" | "estimacion_visual" | "texto_del_screenshot",
+  "marca": string (cadena/restaurante si aplica, o ""),
+  "razonamiento": string (resumen breve del análisis),
   "componentes": [{"nombre": string, "gramos": number, "calorias_100g": number, "proteinas_100g": number, "carbohidratos_100g": number, "grasas_100g": number}],
-  "porcion_gramos": number (punto medio del rango),
+  "porcion_gramos": number,
   "porcion_min": number,
   "porcion_max": number,
   "calorias_100g": number,
   "proteinas_100g": number,
   "carbohidratos_100g": number,
-  "grasas_100g": number
+  "grasas_100g": number,
+  "preguntas": [{"pregunta": string, "opciones": [{"label": string, "default": boolean, "porcion_gramos": number, "calorias_100g": number, "proteinas_100g": number, "carbohidratos_100g": number, "grasas_100g": number}]}]
 }
 
 Si no podés identificar comida: {"error": "no_food"}`;
 
   try {
-    const res = await geminiPost(key,{
+    const res = await geminiPostTimeout(key,{
       contents:[{parts:[{inlineData:{mimeType,data:base64}},{text:prompt}]}],
       generationConfig:{responseMimeType:"application/json"}
     });
-    if(!res||!res.ok){ showToast(geminiErrorMsg(res),"err"); return null; }
+    if(!res||!res.ok){ showFotoError(geminiErrorMsg(res),_photoRetryRun); return null; }
     const json = await res.json();
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text){ showToast("Gemini no respondió","err"); return null; }
+    if(!text){ showFotoError("Gemini no respondió",_photoRetryRun); return null; }
     const data = JSON.parse(text);
-    if(data.error === "no_food"){ showToast("No pude identificar comida en la foto","err"); return null; }
-    if(!data.nombre_plato){ showToast("Respuesta inválida de Gemini","err"); return null; }
+    if(data.error === "no_food"){ showFotoError("No pude identificar comida en la imagen. Probá con otra foto o cargala manualmente.",_photoRetryRun); return null; }
+    if(!data.nombre_plato){ showFotoError("Respuesta inválida de Gemini",_photoRetryRun); return null; }
     // Aplicar factor de calibración personal silencioso (si hay suficientes muestras)
     if(calibFactor !== 1 && data.porcion_gramos){
       data.porcion_gramos = Math.round(data.porcion_gramos * calibFactor);
@@ -4351,7 +4492,10 @@ Si no podés identificar comida: {"error": "no_food"}`;
     }
     _lastGeminiEstimate = data.porcion_gramos || null;
     return data;
-  } catch(e){ showToast("Error al analizar la foto","err"); console.error(e); return null; }
+  } catch(e){
+    showFotoError(e.message==="timeout"?"La IA tardó demasiado (45s). Probá de nuevo.":"Error al analizar la foto",_photoRetryRun);
+    console.error(e); return null;
+  }
 }
 
 function showFotoResult(data, mode="day"){
@@ -4382,7 +4526,63 @@ function showFotoResult(data, mode="day"){
       data.componentes.map(c=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">${c.nombre}</span><span style="font-family:var(--mono);color:var(--accent)">${c.gramos}g</span></div>`).join("") +
       (data.razonamiento ? `<div style="color:var(--text3);font-style:italic;margin-top:6px;font-size:11px">${data.razonamiento}</div>` : "");
   } else if(compEl){ compEl.style.display = "none"; }
+  renderFotoFuente(data);
+  renderFotoPreguntas(data, mode);
   document.getElementById("foto-result").style.display = "block";
+  updateFotoPreview();
+}
+
+// Indicador sutil de qué tan confiable es el dato
+function renderFotoFuente(data){
+  const el=document.getElementById("foto-fuente");
+  if(!el)return;
+  const map={
+    valores_oficiales_marca:{txt:"✓ Valores oficiales"+(data.marca?" de "+data.marca:""),color:"var(--teal)"},
+    texto_del_screenshot:{txt:"📄 Leído del texto de la app"+(data.marca?" · "+data.marca:""),color:"var(--teal)"},
+    estimacion_visual:{txt:"👁 Estimación visual"+(data.marca?" · "+data.marca:""),color:"var(--text3)"},
+  };
+  const f=map[data.fuente];
+  if(!f){el.style.display="none";return;}
+  el.style.display="block";
+  el.textContent=f.txt;
+  el.style.color=f.color;
+}
+
+// Preguntas de identidad/preparación: chips con la opción más probable preseleccionada.
+// Los macros de cada opción vienen en la misma respuesta → recálculo instantáneo, sin 2ª llamada.
+let _fotoPreguntas=null,_fotoRespuestas=[];
+function renderFotoPreguntas(data, mode){
+  const el=document.getElementById("foto-preguntas");
+  if(!el)return;
+  const qs=(data.preguntas||[]).filter(q=>q&&q.pregunta&&Array.isArray(q.opciones)&&q.opciones.length>=2).slice(0,2);
+  _fotoPreguntas=qs.length?qs:null;
+  if(!qs.length){el.style.display="none";el.innerHTML="";return;}
+  _fotoRespuestas=qs.map(q=>{
+    const i=q.opciones.findIndex(o=>o.default);
+    return i>=0?i:0;
+  });
+  el.style.display="block";
+  el.innerHTML=qs.map((q,qi)=>`
+    <div style="margin-bottom:8px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${q.pregunta}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="foto-q-${qi}">
+        ${q.opciones.map((o,oi)=>`<button class="rest-preset${oi===_fotoRespuestas[qi]?" active":""}" onclick="answerFotoPregunta(${qi},${oi})">${o.label}</button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+function answerFotoPregunta(qi,oi){
+  if(!_fotoPreguntas?.[qi])return;
+  _fotoRespuestas[qi]=oi;
+  const row=document.getElementById("foto-q-"+qi);
+  if(row)[...row.children].forEach((b,i)=>b.classList.toggle("active",i===oi));
+  // Aplicar los macros de la opción elegida (ya vinieron en la respuesta)
+  const o=_fotoPreguntas[qi].opciones[oi];
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!=null)e.value=v;};
+  set("foto-cal100",o.calorias_100g);
+  set("foto-prot100",o.proteinas_100g);
+  set("foto-carb100",o.carbohidratos_100g);
+  set("foto-fat100",o.grasas_100g);
+  if(fotoModalMode!=="despensa"&&o.porcion_gramos)set("foto-gramos",o.porcion_gramos);
   updateFotoPreview();
 }
 
@@ -4395,7 +4595,12 @@ function updateFotoPreview(){
   document.getElementById("foto-fat-preview").textContent = +((+document.getElementById("foto-fat100").value||0)*f).toFixed(1);
 }
 
-function closeFotoModal(){ document.getElementById("foto-modal").classList.remove("show"); }
+function closeFotoModal(){
+  document.getElementById("foto-modal").classList.remove("show");
+  _fotoRetryFn=null;_fotoPreguntas=null;_fotoRespuestas=[];
+  const err=document.getElementById("foto-error");if(err)err.style.display="none";
+  hideFotoLoading();
+}
 document.getElementById("foto-modal").addEventListener("click", function(e){ if(e.target===this) closeFotoModal(); });
 
 function confirmFotoFood(){
@@ -5015,22 +5220,22 @@ async function onLabelPhotoSelected(input){
   if(!getGeminiKey()){showToast("Primero guardá tu API Key de Gemini en Perfil","err");return;}
   closeBarcodeModal();
   const productCode=document.getElementById("barcode-code-found").value;
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    const b64=e.target.result.split(",")[1],mime=file.type||"image/jpeg";
+  try{
+    showToast("Comprimiendo imagen...","ok");
+    const img=await compressImage(file);
     showToast("Analizando etiqueta...","ok");
     const prompt=`Analizá esta foto de una etiqueta nutricional impresa en un envase. Extraé los valores POR 100g (si están por porción, convertí matemáticamente). Respondé SOLO con JSON: nombre_producto (string), calorias_100g, proteinas_100g, carbohidratos_100g, grasas_100g. Todos números. Sin texto extra.`;
-    const res=await geminiPost(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:mime,data:b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
     if(!res||!res.ok){showToast(geminiErrorMsg(res),"err");return;}
     const json=await res.json();
     const text=json?.candidates?.[0]?.content?.parts?.[0]?.text;
     if(!text){showToast("Gemini no respondió","err");return;}
-    try{
-      const d=JSON.parse(text);
-      selectFood({n:d.nombre_producto||"Producto "+productCode,c:+d.calorias_100g||0,p:+d.proteinas_100g||0,ch:+d.carbohidratos_100g||0,g:+d.grasas_100g||0,cat:"📷",src:"label"});
-    }catch{showToast("No se pudo interpretar la etiqueta","err");}
-  };
-  reader.readAsDataURL(file);
+    const d=JSON.parse(text);
+    selectFood({n:d.nombre_producto||"Producto "+productCode,c:+d.calorias_100g||0,p:+d.proteinas_100g||0,ch:+d.carbohidratos_100g||0,g:+d.grasas_100g||0,cat:"📷",src:"label"});
+  }catch(e){
+    showToast(e.message==="timeout"?"La IA tardó demasiado. Probá de nuevo.":"No se pudo interpretar la etiqueta","err");
+    console.error(e);
+  }
 }
 
 // ─── EDITOR DE RUTINA ─────────────────────────────────────────────
@@ -5278,9 +5483,16 @@ async function onRoutineFileSelected(input){
   // Reset
   routineImportB64=null;routineImportMime=null;routineImportFileText=null;routineImportFileImages=null;
   if(mime.startsWith("image/")){
-    const reader=new FileReader();
-    reader.onload=e=>{routineImportB64=e.target.result.split(",")[1];routineImportMime=mime;setPreview("📷 "+file.name);};
-    reader.readAsDataURL(file);
+    setPreview("📷 Comprimiendo imagen...","var(--amber)");
+    try{
+      // Rutinas: 1600px para no perder legibilidad del texto de la tabla
+      const img=await compressImage(file,1600,0.85);
+      routineImportB64=img.b64;routineImportMime=img.mime;
+      setPreview("📷 "+file.name);
+    }catch(e){
+      prev.style.display="none";input.value="";
+      showToast("No se pudo procesar la imagen","err");
+    }
   }else if(mime==="application/pdf"||ext==="pdf"){
     setPreview("📄 Procesando PDF...","var(--amber)");
     try{
