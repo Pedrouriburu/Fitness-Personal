@@ -615,6 +615,16 @@ select option{background:#18181c}
   </div>
 
   <div class="prof-sec" style="margin-top:16px">
+    <div class="page-sub" style="margin-bottom:8px">Memoria visual de platos</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.4">
+      Cuando confirmás el análisis de una foto, la app guarda una miniatura y sus valores. Si volvés a fotografiar el mismo plato, lo reconoce al instante sin consultar a la IA.
+      <b style="color:var(--text2)">Las fotos se guardan solo en este dispositivo y no se sincronizan.</b>
+    </div>
+    <div id="photolib-stats" style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:10px"></div>
+    <button class="btn wide" onclick="clearPhotoLibrary()">Vaciar memoria visual</button>
+  </div>
+
+  <div class="prof-sec" style="margin-top:16px">
     <div class="page-sub" style="margin-bottom:8px">Exportar datos</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.4">Descargá todo tu historial de comidas y sesiones de gym en formato CSV, listo para abrir en Excel o Google Sheets.</div>
     <button class="btn wide" onclick="exportarCSV()">
@@ -755,6 +765,18 @@ select option{background:#18181c}
       </div>
     </div>
     <div class="form-group"><label class="form-label">Notas (opcional)</label><input type="text" class="form-input" id="nf-notes" placeholder="ej: receta casera de mamá, sin gluten..."></div>
+    <!-- Fotos de referencia: alimentan el reconocimiento visual con TUS valores exactos -->
+    <div class="form-group">
+      <label class="form-label">Fotos de referencia (hasta 3, opcional)</label>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;line-height:1.4">Si mañana fotografiás esta misma comida, la app la reconoce y usa estos valores en vez de estimar. Varios ángulos mejoran el reconocimiento.</div>
+      <div id="nf-photos" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="btn" style="font-size:12px;padding:6px 12px" onclick="document.getElementById('nf-photo-cam').click()">📷 Cámara</button>
+        <button type="button" class="btn" style="font-size:12px;padding:6px 12px" onclick="document.getElementById('nf-photo-gal').click()">🖼 Galería</button>
+      </div>
+      <input type="file" id="nf-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="onRecipePhotoSelected(this)">
+      <input type="file" id="nf-photo-gal" accept="image/*" style="display:none" onchange="onRecipePhotoSelected(this)">
+    </div>
     <button class="btn primary wide" onclick="saveNewFood()" id="nf-save-btn">Guardar en mi despensa</button>
   </div>
 </div>
@@ -934,10 +956,13 @@ select option{background:#18181c}
       <div class="modal-title">📸 Análisis de foto</div>
       <button class="modal-close" onclick="closeFotoModal()">×</button>
     </div>
+    <div id="foto-thumb" style="display:none;margin-bottom:12px"></div>
     <div id="foto-loading" style="text-align:center;padding:24px 0;display:none">
       <div style="font-size:32px;margin-bottom:10px">🤖</div>
       <div style="font-size:14px;color:var(--text2)" id="foto-loading-msg">Analizando la foto...</div>
     </div>
+    <!-- Match de memoria visual: resultado instantáneo sin consumir API -->
+    <div id="foto-match" style="display:none"></div>
     <div id="foto-error" style="display:none;text-align:center;padding:20px 0">
       <div style="font-size:32px;margin-bottom:10px">⚠️</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px" id="foto-error-msg"></div>
@@ -2125,7 +2150,7 @@ function getDayTargets(td){
 function normalizeStr(s){return(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function getAllFoods(){
   const custom=getCustomFoods().map(f=>{
-    const o={n:f.name,c:f.cal,p:f.prot,ch:f.carb,g:f.fat,cat:f.cat,src:"custom",id:f.id,notes:f.notes};
+    const o={n:f.name,c:f.cal,p:f.prot,ch:f.carb,g:f.fat,cat:f.cat,src:"custom",id:f.id,notes:f.notes,thumb:f.thumb};
     // Porciones aprendidas (ej. del registro conversacional): el modal de porciones las usa
     const p0=f.porciones?.[0];
     if(p0?.gramos){o._gu=p0.unidad;o._gpU=p0.gramos;o._allowed=_GEMINI_UNIT_ALLOWED[p0.unidad]||null;}
@@ -2241,6 +2266,7 @@ async function doSearch(q){
   }
   el.innerHTML=compoundHtml+allResults.map(item=>`
     <div class="sri" onclick='selectFood(${JSON.stringify(item)})'>
+      ${item.thumb?`<img src="${item.thumb}" style="width:34px;height:34px;object-fit:cover;border-radius:6px;flex-shrink:0;margin-right:8px">`:""}
       <div style="min-width:0">
         <div class="sri-name">${item.cat} ${item.n}</div>
         <div class="sri-sub">P:${item.p}g C:${item.ch}g G:${item.g}g /100g</div>
@@ -2459,10 +2485,35 @@ function showNewFoodModal(prefill){
   document.getElementById("nf-carb").value="";document.getElementById("nf-fat").value="";
   document.getElementById("nf-notes").value="";document.getElementById("nf-cal-hint").textContent="";
   ingRows=[{name:"",qty:100}];switchNFMode("macros");renderIngRows();
+  _nfPhotos=[];renderNFPhotos();
   document.getElementById("new-food-modal").classList.add("show");
   hideResults();
 }
-function closeNewFoodModal(){document.getElementById("new-food-modal").classList.remove("show");}
+function closeNewFoodModal(){document.getElementById("new-food-modal").classList.remove("show");_nfPhotos=[];}
+
+// ─── FOTOS DE REFERENCIA EN RECETAS PROPIAS ───────────────────────
+let _nfPhotos=[]; // [{thumb,hash}]
+async function onRecipePhotoSelected(input){
+  const file=input.files&&input.files[0];
+  input.value="";
+  if(!file)return;
+  if(_nfPhotos.length>=3){showToast("Máximo 3 fotos por receta","err");return;}
+  try{
+    const img=await compressImage(file,512,0.7,true); // solo para matching, no va a la IA
+    if(!img.hash){showToast("No se pudo procesar la imagen","err");return;}
+    _nfPhotos.push({thumb:img.thumb,hash:img.hash});
+    renderNFPhotos();
+  }catch(e){showToast("No se pudo procesar la imagen","err");console.error(e);}
+}
+function renderNFPhotos(){
+  const el=document.getElementById("nf-photos");
+  if(!el)return;
+  el.innerHTML=_nfPhotos.map((p,i)=>`<div style="position:relative">
+    <img src="${p.thumb}" style="width:64px;height:64px;object-fit:cover;border-radius:var(--r-sm)">
+    <button type="button" onclick="removeNFPhoto(${i})" style="position:absolute;top:-6px;right:-6px;background:var(--surface);border:1px solid var(--border2);border-radius:50%;width:20px;height:20px;color:var(--text2);cursor:pointer;font-size:12px;line-height:1;padding:0">×</button>
+  </div>`).join("");
+}
+function removeNFPhoto(i){_nfPhotos.splice(i,1);renderNFPhotos();}
 document.getElementById("new-food-modal").addEventListener("click",function(e){if(e.target===this)closeNewFoodModal();});
 function switchNFMode(mode){
   nfMode=mode;
@@ -2595,8 +2646,16 @@ function saveNewFood(){
     if(idx>=0){foods[idx]={...foods[idx],name,cal,prot,carb,fat,cat,notes};}
     showToast("Alimento actualizado","ok");
   } else {
-    foods.push({id:getNextFoodId(),name,cal,prot,carb,fat,cat,notes,createdAt:TODAY});
-    showToast(name+" guardado en tu despensa","ok");
+    const newId=getNextFoodId();
+    const rec={id:newId,name,cal,prot,carb,fat,cat,notes,createdAt:TODAY};
+    if(_nfPhotos.length)rec.thumb=_nfPhotos[0].thumb; // miniatura para Despensa y búsqueda
+    foods.push(rec);
+    // Fotos de referencia → mismo sistema de matching que las fotos de comida
+    for(const p of _nfPhotos){
+      savePhotoEntry({thumb:p.thumb,hash:p.hash,nombre:name,cal,prot,carb,fat,
+        porcion:100,ref:true,foodId:newId,date:TODAY});
+    }
+    showToast(name+" guardado en tu despensa"+(_nfPhotos.length?` · ${_nfPhotos.length} foto${_nfPhotos.length>1?"s":""} de referencia`:""),"ok");
   }
   saveCustomFoods(foods);closeNewFoodModal();renderDespensa();editingId=null;
 }
@@ -2648,6 +2707,7 @@ function renderDespensa(){
   }
   el.innerHTML=filtered.map(f=>`
     <div class="despensa-item">
+      ${f.thumb?`<img src="${f.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:var(--r-sm);flex-shrink:0;margin-right:10px">`:""}
       <div class="di-info">
         <div class="di-name">${f.cat||"🍽️"} ${f.name}</div>
         <div class="di-macros">P:${f.prot}g C:${f.carb}g G:${f.fat}g · ${f.cal} kcal/100g</div>
@@ -3777,7 +3837,7 @@ function renderAnio(){
 function showDayDetail(date){const allDays=getDays(),d=allDays[date]||{foods:[],steps:0,gym:{}},t=getTotals(d.foods||[]),tgt=getDayTargets(d);document.getElementById("day-det-box").innerHTML=`<div class="day-det"><div class="day-det-hdr"><span style="font-size:13px;font-weight:500;font-family:var(--mono)">${date}</span><button style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer" onclick="document.getElementById('day-det-box').innerHTML=''">×</button></div><div class="brow"><span class="bkey">Consumido</span><span class="bval">${Math.round(t.cal)} kcal</span></div><div class="brow"><span class="bkey">Gasto total</span><span class="bval">${tgt.burned} kcal</span></div><div class="brow"><span class="bkey">Proteínas</span><span class="bval">${Math.round(t.prot)}g</span></div><div class="brow"><span class="bkey">Gym 🏋️</span><span class="bval">${d.gymOn?"Sí (+"+tgt.gc+" kcal)":"No"}</span></div><div class="brow"><span class="bkey">Boxeo 🥊</span><span class="bval">${d.boxingOn?"Sí "+( d.boxingDuration||90)+"min (+"+tgt.bc+" kcal)":"No"}</span></div></div>`;}
 
 // ─── PERFIL ───────────────────────────────────────────────────────
-function renderPerfil(){const p=getProfile();document.getElementById("p-peso").value=p.peso;document.getElementById("p-altura").value=p.altura;document.getElementById("p-edad").value=p.edad;document.getElementById("p-sexo").value=p.sexo;document.getElementById("p-act").value=p.act;document.getElementById("p-obj").value=p.obj;showMacrosResult();const k=document.getElementById("p-gemini-key");if(k)k.value=getGeminiKey();const rc=document.getElementById("ranking-optin-chk");if(rc)rc.checked=rankingOptIn();renderDietConfig();renderWeightChart();}
+function renderPerfil(){const p=getProfile();document.getElementById("p-peso").value=p.peso;document.getElementById("p-altura").value=p.altura;document.getElementById("p-edad").value=p.edad;document.getElementById("p-sexo").value=p.sexo;document.getElementById("p-act").value=p.act;document.getElementById("p-obj").value=p.obj;showMacrosResult();const k=document.getElementById("p-gemini-key");if(k)k.value=getGeminiKey();const rc=document.getElementById("ranking-optin-chk");if(rc)rc.checked=rankingOptIn();renderDietConfig();renderPhotoLibStats();renderWeightChart();}
 
 function renderWeightChart(){
   const wh = ls("weightHistory",[]);
@@ -4267,33 +4327,20 @@ function dismissCameraTip(){
 // Una foto de iPhone son 3-5MB y el base64 suma ~33% → se subían 5-7MB por foto.
 // Redimensionar a 1024px y exportar JPEG q=0.8 deja ~200-400KB. Además, pasar por
 // canvas convierte HEIC a JPEG automáticamente.
-async function compressImage(file, maxDim=1024, quality=0.8){
-  const readAsDataURL=()=>new Promise((res,rej)=>{
+// Decodifica una vez y devuelve un source dibujable (respetando orientación EXIF)
+async function _decodeImage(file){
+  if(typeof createImageBitmap==="function"){
+    try{
+      const bmp=await createImageBitmap(file,{imageOrientation:"from-image"});
+      return{src:bmp,w:bmp.width,h:bmp.height,close:()=>bmp.close?.()};
+    }catch(e){/* sigue por el camino del <img> */}
+  }
+  const dataUrl=await new Promise((res,rej)=>{
     const r=new FileReader();
     r.onload=e=>res(e.target.result);
     r.onerror=()=>rej(new Error("read"));
     r.readAsDataURL(file);
   });
-  const draw=(src,w,h)=>{
-    const scale=Math.min(1,maxDim/Math.max(w,h));
-    const cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
-    const canvas=document.createElement("canvas");
-    canvas.width=cw;canvas.height=ch;
-    const ctx=canvas.getContext("2d");
-    ctx.drawImage(src,0,0,cw,ch);
-    const dataUrl=canvas.toDataURL("image/jpeg",quality);
-    return{b64:dataUrl.split(",")[1],mime:"image/jpeg"};
-  };
-  // Preferimos createImageBitmap: respeta la orientación EXIF (fotos rotadas de iPhone)
-  if(typeof createImageBitmap==="function"){
-    try{
-      const bmp=await createImageBitmap(file,{imageOrientation:"from-image"});
-      const out=draw(bmp,bmp.width,bmp.height);
-      bmp.close?.();
-      return out;
-    }catch(e){/* sigue por el camino del <img> */}
-  }
-  const dataUrl=await readAsDataURL();
   try{
     const img=await new Promise((res,rej)=>{
       const i=new Image();
@@ -4301,12 +4348,161 @@ async function compressImage(file, maxDim=1024, quality=0.8){
       i.onerror=()=>rej(new Error("decode"));
       i.src=dataUrl;
     });
-    return draw(img,img.naturalWidth||img.width,img.naturalHeight||img.height);
+    return{src:img,w:img.naturalWidth||img.width,h:img.naturalHeight||img.height,close:()=>{}};
   }catch(e){
-    // Fallback: el browser no pudo decodificar (HEIC sin soporte) → mandar el original
-    console.warn("compressImage: sin decodificación, se envía el original");
-    return{b64:dataUrl.split(",")[1],mime:file.type||"image/jpeg"};
+    return{src:null,dataUrl,close:()=>{}}; // HEIC sin soporte → se envía el original
   }
+}
+function _drawScaled(src,w,h,maxDim,quality){
+  const scale=Math.min(1,maxDim/Math.max(w,h));
+  const cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+  const canvas=document.createElement("canvas");
+  canvas.width=cw;canvas.height=ch;
+  canvas.getContext("2d").drawImage(src,0,0,cw,ch);
+  return canvas.toDataURL("image/jpeg",quality);
+}
+
+// dHash perceptual de 64 bits: reduce a 9x8 en gris y compara cada píxel con el siguiente
+function _dHash(src,w,h){
+  const canvas=document.createElement("canvas");
+  canvas.width=9;canvas.height=8;
+  const ctx=canvas.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(src,0,0,9,8);
+  const px=ctx.getImageData(0,0,9,8).data;
+  const gray=[];
+  for(let i=0;i<9*8;i++){
+    const o=i*4;
+    gray.push(0.299*px[o]+0.587*px[o+1]+0.114*px[o+2]);
+  }
+  let bits="";
+  for(let y=0;y<8;y++)for(let x=0;x<8;x++)bits+=gray[y*9+x]>gray[y*9+x+1]?"1":"0";
+  return bits;
+}
+function hammingDistance(a,b){
+  if(!a||!b||a.length!==b.length)return 999;
+  let d=0;
+  for(let i=0;i<a.length;i++)if(a[i]!==b[i])d++;
+  return d;
+}
+
+// Un solo decode → imagen para Gemini + miniatura para la librería + hash perceptual
+async function compressImage(file, maxDim=1024, quality=0.8, withExtras=false){
+  const dec=await _decodeImage(file);
+  if(!dec.src){
+    console.warn("compressImage: sin decodificación, se envía el original");
+    return{b64:dec.dataUrl.split(",")[1],mime:file.type||"image/jpeg",thumb:null,hash:null};
+  }
+  try{
+    const dataUrl=_drawScaled(dec.src,dec.w,dec.h,maxDim,quality);
+    const out={b64:dataUrl.split(",")[1],mime:"image/jpeg",thumb:null,hash:null};
+    if(withExtras){
+      out.thumb=_drawScaled(dec.src,dec.w,dec.h,256,0.7); // dataURL completo, pocos KB
+      out.hash=_dHash(dec.src,dec.w,dec.h);
+    }
+    return out;
+  }finally{dec.close();}
+}
+
+// ─── MEMORIA VISUAL DE PLATOS (IndexedDB) ─────────────────────────
+// localStorage no soporta este volumen. Cada entrada: miniatura, hash, resultado
+// confirmado y fecha. Solo en este dispositivo — no se sincroniza.
+const PHOTO_DB="fitnessPhotos",PHOTO_STORE="photoLibrary",PHOTO_MAX=200;
+let _photoDbPromise=null;
+function photoDB(){
+  if(_photoDbPromise)return _photoDbPromise;
+  _photoDbPromise=new Promise((res,rej)=>{
+    if(!window.indexedDB)return rej(new Error("no-idb"));
+    const req=indexedDB.open(PHOTO_DB,1);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains(PHOTO_STORE)){
+        const st=db.createObjectStore(PHOTO_STORE,{keyPath:"id",autoIncrement:true});
+        st.createIndex("lastUsed","lastUsed");
+      }
+    };
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=()=>rej(req.error||new Error("idb"));
+  }).catch(e=>{console.warn("photoDB:",e);return null;});
+  return _photoDbPromise;
+}
+async function _photoTx(mode,fn){
+  const db=await photoDB();
+  if(!db)return null;
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(PHOTO_STORE,mode);
+    const st=tx.objectStore(PHOTO_STORE);
+    let out=null;
+    try{out=fn(st);}catch(e){rej(e);return;}
+    tx.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
+    tx.onerror=()=>rej(tx.error);
+  }).catch(e=>{console.warn("photoTx:",e);return null;});
+}
+async function getPhotoLibrary(){
+  const r=await _photoTx("readonly",st=>st.getAll());
+  return r||[];
+}
+async function savePhotoEntry(entry){
+  const now=Date.now();
+  const rec={thumb:entry.thumb||null,hash:entry.hash||null,nombre:entry.nombre||"",
+    cal:+entry.cal||0,prot:+entry.prot||0,carb:+entry.carb||0,fat:+entry.fat||0,
+    porcion:+entry.porcion||0,ref:!!entry.ref,foodId:entry.foodId??null,
+    date:entry.date||TODAY,createdAt:now,lastUsed:now,uses:1};
+  await _photoTx("readwrite",st=>st.add(rec));
+  await prunePhotoLibrary(); // esperar: sin await, guardados seguidos podan sobre snapshots viejos
+  return rec;
+}
+// LRU: por encima de PHOTO_MAX se descartan las menos usadas / más viejas primero.
+// Las fotos de referencia de recetas propias no se descartan.
+async function prunePhotoLibrary(){
+  const all=await getPhotoLibrary();
+  if(all.length<=PHOTO_MAX)return;
+  const drop=all.filter(e=>!e.ref)
+    .sort((a,b)=>(a.uses-b.uses)||(a.lastUsed-b.lastUsed))
+    .slice(0,all.length-PHOTO_MAX);
+  await _photoTx("readwrite",st=>{drop.forEach(e=>st.delete(e.id));});
+}
+async function touchPhotoEntry(id){
+  await _photoTx("readwrite",st=>{
+    const g=st.get(id);
+    g.onsuccess=()=>{const r=g.result;if(r){r.uses=(r.uses||1)+1;r.lastUsed=Date.now();st.put(r);}};
+  });
+}
+async function findPhotoMatch(hash,maxDist=10){
+  if(!hash)return null;
+  const all=await getPhotoLibrary();
+  let best=null,bestD=999;
+  for(const e of all){
+    const d=hammingDistance(hash,e.hash);
+    if(d<bestD){bestD=d;best=e;}
+  }
+  return (best&&bestD<=maxDist)?{entry:best,dist:bestD}:null;
+}
+async function clearPhotoLibrary(){
+  await _photoTx("readwrite",st=>st.clear());
+  showToast("Memoria visual vaciada","ok");
+  renderPhotoLibStats();
+}
+async function renderPhotoLibStats(){
+  const el=document.getElementById("photolib-stats");
+  if(!el)return;
+  const all=await getPhotoLibrary();
+  const bytes=all.reduce((a,e)=>a+((e.thumb?.length||0)*0.75),0);
+  const kb=Math.round(bytes/1024);
+  el.textContent=all.length?`${all.length} plato${all.length!==1?"s":""} recordado${all.length!==1?"s":""} · ~${kb} KB`:"Todavía no hay platos guardados";
+}
+
+// Platos más frecuentes (refuerzo de consistencia en el prompt)
+async function frequentDishNames(){
+  const all=await getPhotoLibrary();
+  const seen=new Map();
+  all.sort((a,b)=>(b.uses-a.uses)||(b.lastUsed-a.lastUsed));
+  for(const e of all){
+    if(!e.nombre)continue;
+    const k=normalizeStr(e.nombre);
+    if(!seen.has(k))seen.set(k,e.nombre);
+    if(seen.size>=20)break;
+  }
+  return[...seen.values()];
 }
 
 // Estado de progreso en el modal de foto ("Comprimiendo..." → "Analizando...")
@@ -4377,7 +4573,9 @@ async function onNutritionLabelSelected(input){
     try{
       const img=await compressImage(file);
       setFotoProgress("Analizando con IA...");
-      const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+      console.time("gemini-etiqueta");
+      const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json",maxOutputTokens:1536,temperature:0.2}});
+      console.timeEnd("gemini-etiqueta");
       if(!res||!res.ok){showFotoError(geminiErrorMsg(res),run);return;}
       const json=await res.json();
       const text=json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -4398,24 +4596,95 @@ function onPhotoSelected(input){
   const file = input.files && input.files[0];
   if(!file) return;
   if(!getGeminiKey()){ showToast("Primero guardá tu API Key de Gemini en Perfil","err"); return; }
-  const run=async()=>{
+  // El modal se abre YA y la compresión arranca en paralelo con su animación
+  showFotoLoading("Comprimiendo imagen...");
+  const imgPromise=(async()=>{
+    console.time("compresion");
+    const r=await compressImage(file,1024,0.8,true);
+    console.timeEnd("compresion");
+    console.log("Tamaño enviado: ~"+Math.round(r.b64.length*0.75/1024)+" KB");
+    return r;
+  })();
+
+  const run=async(skipMatch)=>{
     showFotoLoading("Comprimiendo imagen...");
     try{
-      const img=await compressImage(file);
+      const img=await imgPromise;
+      _lastPhotoImg=img;
+      showFotoThumb(img.thumb);            // velocidad percibida: miniatura ya visible
+      // Memoria visual: ¿ya registró este plato antes?
+      if(!skipMatch&&img.hash){
+        const m=await findPhotoMatch(img.hash);
+        if(m){ showPhotoMatch(m); return; }
+      }
       setFotoProgress("Analizando con IA...");
       const data=await analyzePhotoWithGemini(img.b64,img.mime);
       if(!data)return; // analyzePhotoWithGemini ya mostró el error con reintento
+      setFotoProgress("Calculando macros...");
       hideFotoLoading();
       showFotoResult(data);
     }catch(err){
-      showFotoError(err.message==="timeout"?"La IA tardó demasiado (45s). Probá de nuevo.":"Error al procesar la imagen",run);
+      showFotoError(err.message==="timeout"?"La IA tardó demasiado (45s). Probá de nuevo.":"Error al procesar la imagen",()=>run(true));
       console.error(err);
     }
   };
-  _photoRetryRun=run;
-  run();
+  _skipPhotoSave=false;
+  _photoRetryRun=()=>run(true);
+  run(false);
 }
-let _photoRetryRun=null;
+let _photoRetryRun=null,_lastPhotoImg=null,_photoMatchEntry=null,_skipPhotoSave=false;
+
+function showFotoThumb(thumb){
+  const el=document.getElementById("foto-thumb");
+  if(!el)return;
+  if(!thumb){el.style.display="none";return;}
+  el.style.display="block";
+  el.innerHTML=`<img src="${thumb}" style="width:100%;max-height:150px;object-fit:cover;border-radius:var(--r-sm)">`;
+}
+
+// Match visual: resultado instantáneo, sin consumir API
+function showPhotoMatch(m){
+  _photoMatchEntry=m.entry;
+  hideFotoLoading();
+  const e=m.entry;
+  const box=document.getElementById("foto-match");
+  if(!box){if(_photoRetryRun)_photoRetryRun();return;}
+  document.getElementById("foto-modal").classList.add("show");
+  document.getElementById("foto-result").style.display="none";
+  box.style.display="block";
+  const fecha=e.date?e.date.split("-").reverse().slice(0,2).join("/"):"";
+  box.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      ${e.thumb?`<img src="${e.thumb}" style="width:110px;height:110px;object-fit:cover;border-radius:var(--r);margin-bottom:10px">`:""}
+      <div style="font-size:14px;font-weight:600">${e.nombre||"Plato guardado"}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">
+        ${e.ref?"Es tu receta guardada — usa tus valores exactos":"¿Es el mismo plato que registraste el "+fecha+"?"}
+      </div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--accent);margin-top:6px">
+        ${e.cal} kcal/100g · P${e.prot} C${e.carb} G${e.fat}
+      </div>
+    </div>
+    <button class="btn primary wide" onclick="usePhotoMatch()">Sí, usar esos valores</button>
+    <button class="btn wide" style="margin-top:8px" onclick="rejectPhotoMatch()">No, analizar de nuevo</button>`;
+}
+function usePhotoMatch(){
+  const e=_photoMatchEntry;
+  if(!e)return;
+  touchPhotoEntry(e.id);
+  document.getElementById("foto-match").style.display="none";
+  _skipPhotoSave=true; // ya está en la librería
+  showFotoResult({
+    nombre_plato:e.nombre,
+    fuente:e.ref?"receta_propia":"memoria_visual",
+    porcion_gramos:e.porcion||100,
+    calorias_100g:e.cal,proteinas_100g:e.prot,carbohidratos_100g:e.carb,grasas_100g:e.fat,
+  },fotoModalMode);
+}
+function rejectPhotoMatch(){
+  _photoMatchEntry=null;
+  document.getElementById("foto-match").style.display="none";
+  if(_photoRetryRun)_photoRetryRun();
+}
 
 async function analyzePhotoWithGemini(base64, mimeType){
   const key = getGeminiKey();
@@ -4447,10 +4716,11 @@ AJUSTE CRÍTICO — COMIDA DE RESTAURANTE:
 Si la comida es de restaurante, rotisería, bar o delivery (NO casera), asumí preparación comercial: MÁS aceite, manteca, azúcar y sal que la versión casera del mismo plato. Típicamente 20-40% MÁS calorías que la receta casera equivalente. Subestimar comida de restaurante es el error más común — no lo cometas. Las milanesas se fríen en abundante aceite, las pastas llevan más manteca y crema, las carnes se sellan con más grasa.
 
 PREGUNTAS (opcional, máximo 2 — SOLO sobre QUÉ es o CÓMO está preparado):
-Si hay ambigüedad que cambia SIGNIFICATIVAMENTE los macros (>15%), devolvé un array "preguntas". Cada pregunta con 2 a 4 opciones concretas, y para CADA opción los macros completos resultantes (así el recálculo es instantáneo sin volver a consultarte).
+Si hay ambigüedad que cambia SIGNIFICATIVAMENTE los macros (>15%), devolvé un array "preguntas". Cada pregunta con 2 a 4 opciones concretas.
+Para cada opción NO repitas los macros: devolvé solo FACTORES MULTIPLICADORES respecto de los valores del nivel raíz — f_cal, f_prot, f_carb, f_gras (ej. si al horno es tu estimación base y frita tiene 35% más calorías y el doble de grasa: al horno → f_cal 1.0, f_gras 1.0; frita → f_cal 1.35, f_gras 2.0). La multiplicación la hace la app.
 Ejemplos VÁLIDOS: "¿La milanesa es frita o al horno?", "¿El pollo es con piel o sin piel?", "¿Es leche entera o descremada?", "¿La hamburguesa es casera o de cadena?", "¿El café lleva azúcar?".
 PROHIBIDO preguntar por cantidad, peso, gramos o tamaño de porción — eso lo estimás vos siempre, nunca lo preguntes.
-Marcá con "default": true la opción MÁS PROBABLE según lo que ves (y que debe coincidir con los valores del nivel raíz).
+Marcá con "default": true la opción MÁS PROBABLE según lo que ves; esa opción debe tener todos sus factores en 1.0 (porque los valores del nivel raíz ya corresponden a ella).
 Si no hay ambigüedad relevante, NO devuelvas preguntas (omitilas o array vacío) — no agregues fricción porque sí.
 
 Respondé SOLO con JSON válido con exactamente estas claves:
@@ -4467,16 +4737,24 @@ Respondé SOLO con JSON válido con exactamente estas claves:
   "proteinas_100g": number,
   "carbohidratos_100g": number,
   "grasas_100g": number,
-  "preguntas": [{"pregunta": string, "opciones": [{"label": string, "default": boolean, "porcion_gramos": number, "calorias_100g": number, "proteinas_100g": number, "carbohidratos_100g": number, "grasas_100g": number}]}]
+  "preguntas": [{"pregunta": string, "opciones": [{"label": string, "default": boolean, "f_cal": number, "f_prot": number, "f_carb": number, "f_gras": number}]}]
 }
 
 Si no podés identificar comida: {"error": "no_food"}`;
 
+  // Refuerzo de consistencia: platos que este usuario ya registró antes
+  const frecuentes=await frequentDishNames();
+  const promptFinal=frecuentes.length
+    ? prompt+`\n\nPLATOS QUE ESTE USUARIO YA REGISTRÓ ANTES: ${frecuentes.join(", ")}.\nSi el plato de la imagen coincide con alguno de estos, usá EXACTAMENTE ese mismo nombre (así los registros del mismo plato quedan consistentes).`
+    : prompt;
+
   try {
+    console.time("gemini-foto");
     const res = await geminiPostTimeout(key,{
-      contents:[{parts:[{inlineData:{mimeType,data:base64}},{text:prompt}]}],
-      generationConfig:{responseMimeType:"application/json"}
+      contents:[{parts:[{inlineData:{mimeType,data:base64}},{text:promptFinal}]}],
+      generationConfig:{responseMimeType:"application/json",maxOutputTokens:1536,temperature:0.2}
     });
+    console.timeEnd("gemini-foto");
     if(!res||!res.ok){ showFotoError(geminiErrorMsg(res),_photoRetryRun); return null; }
     const json = await res.json();
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -4540,6 +4818,8 @@ function renderFotoFuente(data){
     valores_oficiales_marca:{txt:"✓ Valores oficiales"+(data.marca?" de "+data.marca:""),color:"var(--teal)"},
     texto_del_screenshot:{txt:"📄 Leído del texto de la app"+(data.marca?" · "+data.marca:""),color:"var(--teal)"},
     estimacion_visual:{txt:"👁 Estimación visual"+(data.marca?" · "+data.marca:""),color:"var(--text3)"},
+    memoria_visual:{txt:"🧠 Reconocido de tus registros anteriores",color:"var(--teal)"},
+    receta_propia:{txt:"✓ Tu receta guardada — valores exactos",color:"var(--teal)"},
   };
   const f=map[data.fuente];
   if(!f){el.style.display="none";return;}
@@ -4550,8 +4830,10 @@ function renderFotoFuente(data){
 
 // Preguntas de identidad/preparación: chips con la opción más probable preseleccionada.
 // Los macros de cada opción vienen en la misma respuesta → recálculo instantáneo, sin 2ª llamada.
-let _fotoPreguntas=null,_fotoRespuestas=[];
+let _fotoPreguntas=null,_fotoRespuestas=[],_fotoBase=null;
 function renderFotoPreguntas(data, mode){
+  // Valores base sobre los que se aplican los factores de cada opción
+  _fotoBase={cal:+data.calorias_100g||0,prot:+data.proteinas_100g||0,carb:+data.carbohidratos_100g||0,fat:+data.grasas_100g||0};
   const el=document.getElementById("foto-preguntas");
   if(!el)return;
   const qs=(data.preguntas||[]).filter(q=>q&&q.pregunta&&Array.isArray(q.opciones)&&q.opciones.length>=2).slice(0,2);
@@ -4570,20 +4852,29 @@ function renderFotoPreguntas(data, mode){
       </div>
     </div>`).join("");
 }
+// Aplica los factores de TODAS las preguntas sobre los valores base.
+// La aritmética la hace JS (más exacto que pedirle los números al modelo).
+function applyFotoFactores(){
+  if(!_fotoBase)return;
+  let fc=1,fp=1,fh=1,fg=1;
+  _fotoPreguntas?.forEach((q,qi)=>{
+    const o=q.opciones[_fotoRespuestas[qi]];
+    if(!o)return;
+    fc*=+o.f_cal||1; fp*=+o.f_prot||1; fh*=+o.f_carb||1; fg*=+o.f_gras||1;
+  });
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  set("foto-cal100",Math.round(_fotoBase.cal*fc));
+  set("foto-prot100",+(_fotoBase.prot*fp).toFixed(1));
+  set("foto-carb100",+(_fotoBase.carb*fh).toFixed(1));
+  set("foto-fat100",+(_fotoBase.fat*fg).toFixed(1));
+  updateFotoPreview();
+}
 function answerFotoPregunta(qi,oi){
   if(!_fotoPreguntas?.[qi])return;
   _fotoRespuestas[qi]=oi;
   const row=document.getElementById("foto-q-"+qi);
   if(row)[...row.children].forEach((b,i)=>b.classList.toggle("active",i===oi));
-  // Aplicar los macros de la opción elegida (ya vinieron en la respuesta)
-  const o=_fotoPreguntas[qi].opciones[oi];
-  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v!=null)e.value=v;};
-  set("foto-cal100",o.calorias_100g);
-  set("foto-prot100",o.proteinas_100g);
-  set("foto-carb100",o.carbohidratos_100g);
-  set("foto-fat100",o.grasas_100g);
-  if(fotoModalMode!=="despensa"&&o.porcion_gramos)set("foto-gramos",o.porcion_gramos);
-  updateFotoPreview();
+  applyFotoFactores();
 }
 
 function updateFotoPreview(){
@@ -4597,8 +4888,9 @@ function updateFotoPreview(){
 
 function closeFotoModal(){
   document.getElementById("foto-modal").classList.remove("show");
-  _fotoRetryFn=null;_fotoPreguntas=null;_fotoRespuestas=[];
-  const err=document.getElementById("foto-error");if(err)err.style.display="none";
+  _fotoRetryFn=null;_fotoPreguntas=null;_fotoRespuestas=[];_fotoBase=null;
+  _lastPhotoImg=null;_photoMatchEntry=null;_skipPhotoSave=false;
+  ["foto-error","foto-match","foto-thumb"].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display="none";});
   hideFotoLoading();
 }
 document.getElementById("foto-modal").addEventListener("click", function(e){ if(e.target===this) closeFotoModal(); });
@@ -4611,6 +4903,13 @@ function confirmFotoFood(){
   const prot100 = +document.getElementById("foto-prot100").value || 0;
   const carb100 = +document.getElementById("foto-carb100").value || 0;
   const fat100  = +document.getElementById("foto-fat100").value  || 0;
+  const porcionG = +document.getElementById("foto-gramos").value || 0;
+
+  // Memoria visual: guardar el resultado CONFIRMADO por el usuario
+  if(!_skipPhotoSave && _lastPhotoImg?.hash){
+    savePhotoEntry({thumb:_lastPhotoImg.thumb,hash:_lastPhotoImg.hash,nombre,
+      cal:cal100,prot:prot100,carb:carb100,fat:fat100,porcion:porcionG,date:TODAY});
+  }
 
   if(fotoModalMode === "despensa"){
     // Guardar como alimento en Despensa (macros por 100g)
@@ -5225,7 +5524,7 @@ async function onLabelPhotoSelected(input){
     const img=await compressImage(file);
     showToast("Analizando etiqueta...","ok");
     const prompt=`Analizá esta foto de una etiqueta nutricional impresa en un envase. Extraé los valores POR 100g (si están por porción, convertí matemáticamente). Respondé SOLO con JSON: nombre_producto (string), calorias_100g, proteinas_100g, carbohidratos_100g, grasas_100g. Todos números. Sin texto extra.`;
-    const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    const res=await geminiPostTimeout(getGeminiKey(),{contents:[{parts:[{inlineData:{mimeType:img.mime,data:img.b64}},{text:prompt}]}],generationConfig:{responseMimeType:"application/json",maxOutputTokens:1536,temperature:0.2}});
     if(!res||!res.ok){showToast(geminiErrorMsg(res),"err");return;}
     const json=await res.json();
     const text=json?.candidates?.[0]?.content?.parts?.[0]?.text;
