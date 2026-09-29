@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>Tracker · Fitness</title>
+<title>Fitness · Personal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <!-- PWA Safari -->
 <link rel="manifest" href="./manifest.json">
@@ -101,7 +101,6 @@ body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);co
 .sri-kcal{font-size:15px;font-weight:500;font-family:var(--mono);color:var(--text2)}
 .sri-badge{font-size:10px;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:10px;margin-top:2px;display:inline-block}
 .sri-badge.custom{color:var(--purple);background:var(--purple-dim)}
-.sri-badge.shared{color:var(--teal);background:rgba(45,212,191,0.12)}
 .search-no-result{padding:14px 14px 8px;display:flex;flex-direction:column;gap:8px}
 .search-no-result p{font-size:13px;color:var(--text3)}
 .add-new-btn{background:var(--accent-dim);border:1px solid rgba(200,245,100,0.25);border-radius:var(--r-sm);padding:8px 14px;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;text-align:left;width:100%;display:flex;align-items:center;gap:8px;transition:background 0.15s}
@@ -354,7 +353,6 @@ select option{background:#18181c}
   <input type="file" id="foto-input-gallery" accept="image/*" style="display:none" onchange="onPhotoSelected(this)">
   <input type="file" id="label-input" accept="image/*" capture="environment" style="display:none" onchange="onNutritionLabelSelected(this)">
   <input type="file" id="label-input-gallery" accept="image/*" style="display:none" onchange="onNutritionLabelSelected(this)">
-  <div id="nudge-box" style="padding:0 18px"></div>
   <div id="plan-box" style="padding:0 18px"></div>
   <!-- ENTRADA UNIFICADA: buscador + registro conversacional -->
   <div class="food-search-wrap" id="food-search-wrap">
@@ -479,18 +477,6 @@ select option{background:#18181c}
     </div>
   </div>
   <div style="height:8px"></div>
-  <!-- Ranking semanal del grupo -->
-  <div id="ranking-section" style="display:none;padding:0 18px;margin-bottom:16px">
-    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Ranking del grupo</div>
-    <div id="ranking-metric-sel" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="rest-preset active" data-m="dias" onclick="setRankingMetric('dias')">Entrenos</button>
-      <button class="rest-preset" data-m="racha" onclick="setRankingMetric('racha')">Racha</button>
-      <button class="rest-preset" data-m="volumen" onclick="setRankingMetric('volumen')">Volumen</button>
-      <button class="rest-preset" data-m="comidas" onclick="setRankingMetric('comidas')">Comidas</button>
-    </div>
-    <div id="ranking-list"></div>
-    <div id="ranking-msg" style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0;display:none">Iniciá sesión con Google para ver el ranking del grupo.</div>
-  </div>
 </div>
 
 <!-- DESPENSA -->
@@ -519,9 +505,6 @@ select option{background:#18181c}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Iniciar sesión con Google
     </button>
-    <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.5">
-      Tus datos se sincronizan entre dispositivos. Sin cuenta, todo queda solo en este teléfono.
-    </div>
     <!-- Estado: logueado -->
     <div id="fb-user-info" style="display:none;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">
       <img id="fb-avatar" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0">
@@ -532,29 +515,24 @@ select option{background:#18181c}
       </div>
       <button class="btn" onclick="fbSignOut()" style="font-size:12px;padding:5px 10px;flex-shrink:0">Salir</button>
     </div>
-    <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;cursor:pointer">
-      <input type="checkbox" id="ranking-optin-chk" checked onchange="toggleRankingOptIn(this)" style="width:16px;height:16px;accent-color:var(--accent)">
-      <span>Participar en el ranking del grupo</span>
-    </label>
-    <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4">Solo se comparten números agregados (días entrenados, racha, volumen) — nunca el detalle de tus comidas o ejercicios.</div>
   </div>
   <div class="divider"></div>
 
   <div class="prof-sec">
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" class="form-input" id="p-peso" step="0.1" oninput="validatePerfil()"></div>
-      <div class="form-group"><label class="form-label">Altura (cm)</label><input type="number" class="form-input" id="p-altura" oninput="validatePerfil()"></div>
+      <div class="form-group"><label class="form-label">% grasa (opcional)</label><input type="number" class="form-input" id="p-grasa" step="0.5" min="3" max="50" placeholder="—" oninput="validatePerfil()"></div>
     </div>
     <div id="p-validation" style="font-size:12px;color:var(--amber);margin:-6px 0 8px;display:none"></div>
-    <div class="form-row" style="margin-bottom:12px">
-      <div class="form-group"><label class="form-label">Edad</label><input type="number" class="form-input" id="p-edad" min="13" max="120"></div>
-      <div class="form-group"><label class="form-label">Sexo</label><select class="form-input form-sel" id="p-sexo"><option value="m">Masculino</option><option value="f">Femenino</option></select></div>
-    </div>
-    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Actividad base</label>
-      <select class="form-input form-sel" id="p-act">
-        <option value="1.2">Sedentario</option><option value="1.375">Levemente activo</option><option value="1.55">Moderadamente activo</option>
-      </select>
-    </div>
+    <!-- Datos fijos: vienen precargados desde el perfil guardado en Firestore (nunca en el código) -->
+    <details id="p-fijos" style="margin-bottom:12px;font-size:13px">
+      <summary style="cursor:pointer;color:var(--text2)" id="p-fijos-sum">Datos fijos</summary>
+      <div class="form-row" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr">
+        <div class="form-group"><label class="form-label">Altura (cm)</label><input type="number" class="form-input" id="p-altura" oninput="validatePerfil()"></div>
+        <div class="form-group"><label class="form-label">Edad</label><input type="number" class="form-input" id="p-edad" min="13" max="120"></div>
+        <div class="form-group"><label class="form-label">Sexo</label><select class="form-input form-sel" id="p-sexo"><option value="m">Masculino</option><option value="f">Femenino</option></select></div>
+      </div>
+    </details>
     <div class="form-group" style="margin-bottom:12px"><label class="form-label">Objetivo</label>
       <select class="form-input form-sel" id="p-obj">
         <option value="deficit">Perder grasa (déficit ~400 kcal)</option>
@@ -636,14 +614,6 @@ select option{background:#18181c}
       Backup completo (JSON)
     </button>
     <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4">El backup JSON incluye todo tu estado local (historial, despensa, rutinas, perfil) y sirve para restaurar si algo sale mal. No incluye tu API Key de Gemini.</div>
-  </div>
-
-  <div class="prof-sec" style="margin-top:16px;border:1px solid rgba(255,90,90,0.25);border-radius:var(--r);padding:14px">
-    <div class="page-sub" style="margin-bottom:8px;color:var(--red)">Zona peligrosa</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.4">
-      Elimina tu cuenta y todos tus datos de forma permanente: historial, despensa, rutinas y tu usuario de Google en la app. Los alimentos que compartiste con la comunidad quedan, pero de forma anónima. Esta acción no se puede deshacer.
-    </div>
-    <button class="btn wide" style="border-color:rgba(255,90,90,0.4);color:var(--red)" onclick="deleteMyAccount()">Eliminar mi cuenta</button>
   </div>
 </div>
 
@@ -890,7 +860,6 @@ select option{background:#18181c}
     <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px" id="routine-edit-label">Editar ejercicios</div>
     <div style="display:flex;gap:8px;margin-bottom:14px">
       <button class="btn wide" onclick="openRoutineImport()" style="font-size:13px">📝 Importar con IA</button>
-      <button class="btn" id="routine-recover-btn" onclick="recoverMainRoutine()" style="font-size:12px;flex-shrink:0;color:var(--teal);border-color:var(--teal)">Recuperar original</button>
       <button class="btn danger" id="routine-reset-btn" onclick="resetRoutine()" style="font-size:12px;flex-shrink:0">Resetear</button>
     </div>
     <div class="mode-tabs" id="routine-day-tabs" style="margin-bottom:12px;overflow-x:auto;flex-wrap:nowrap"></div>
@@ -1069,10 +1038,8 @@ const firebaseConfig = {
   appId: "1:143264606965:web:7cf0032b6a521f8cd473bc"
 };
 // "days" ya no se sincroniza como campo único: vive en la subcolección months/{YYYY-MM}
-const SYNC_KEYS = ["profile","customFoods","customExercises","foodIdCounter","userRoutine","weightHistory","savedRoutines","rankingOptIn","dietConfig"];
+const SYNC_KEYS = ["profile","customFoods","customExercises","foodIdCounter","userRoutine","weightHistory","savedRoutines","dietConfig"];
 let fbAuth = null, fbDb = null, fbUser = null;
-const ADMIN_UID = "27kSUTAXhpg7NPO342S7XXPjwHn1"; // ← ver tu UID en Perfil después de loguearte
-let _sfCache = null, _sfCacheTime = 0;
 
 function initFirebase(){
   firebase.initializeApp(firebaseConfig);
@@ -1086,7 +1053,7 @@ function initFirebase(){
   fbAuth.onAuthStateChanged(user => {
     fbUser = user;
     updateAuthUI();
-    if(user){ syncFromCloud(); updateLeaderboard(); }
+    if(user) syncFromCloud();
   });
 }
 
@@ -1110,178 +1077,11 @@ async function syncToCloud(key, value){
   } catch(e){ console.warn("syncToCloud error:", e); }
 }
 
-// ─── RANKING SEMANAL ──────────────────────────────────────────────
+// Lunes de la semana actual (lo usan los insights semanales)
 function currentWeekLabel(){
   const today=new Date(),dow=today.getDay()||7; // 1=lun…7=dom
   const mon=new Date(today);mon.setDate(today.getDate()-dow+1);
   return todayKey(mon); // "YYYY-MM-DD" del lunes (hora local)
-}
-
-function rankingOptIn(){return ls("rankingOptIn",true);}
-
-function toggleRankingOptIn(el){
-  const on=!!el.checked;
-  ss("rankingOptIn",on);
-  syncToCloud("rankingOptIn",on);
-  if(on){
-    updateLeaderboard();
-    showToast("Participás del ranking ✓","ok");
-  }else{
-    if(fbUser&&fbDb)fbDb.collection("leaderboard").doc(fbUser.uid).delete().catch(()=>{});
-    showToast("Saliste del ranking del grupo","ok");
-  }
-}
-
-// Publica SOLO agregados al doc público leaderboard/{uid} (nunca el detalle de
-// comidas/ejercicios — eso queda en users/{uid}, privado por reglas de Firestore)
-async function updateLeaderboard(){
-  if(!fbUser||!fbDb) return;
-  if(!rankingOptIn()){
-    try{await fbDb.collection("leaderboard").doc(fbUser.uid).delete();}catch(e){}
-    return;
-  }
-  const weekStart=currentWeekLabel();
-  const s=aggregateWeekStats(weekStart);
-  const prevMon=(()=>{const d=new Date(weekStart+"T12:00:00");d.setDate(d.getDate()-7);return todayKey(d);})();
-  const prev=aggregateWeekStats(prevMon);
-  try{
-    await fbDb.collection("leaderboard").doc(fbUser.uid).set({
-      displayName:fbUser.displayName||"Usuario",
-      photoURL:fbUser.photoURL||"",
-      weekLabel:weekStart,
-      weeklyGymDays:s.trained,
-      weeklyVolume:Math.round(s.vol),
-      weeklyFoodDays:s.regDays,
-      prevWeekVolume:Math.round(prev.vol),
-      streak:calcStreak().current,
-      lastPRAt:localStorage.getItem("lastPRDate")||null,
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:false});
-  }catch(e){console.warn("updateLeaderboard error:",e);}
-  maybeShowNudge();
-}
-
-let rankingMetric="dias";
-let _lbEntries=null; // cache del snapshot para cambiar de métrica sin re-consultar
-
-function setRankingMetric(m){
-  rankingMetric=m;
-  document.querySelectorAll("#ranking-metric-sel .rest-preset").forEach(b=>b.classList.toggle("active",b.dataset.m===m));
-  renderRankingList();
-}
-
-// Insignias calculadas al vuelo desde los agregados — sin infraestructura persistente
-function computeRankingBadges(entries){
-  const badges={};
-  const add=(uid,e)=>{(badges[uid]=badges[uid]||[]).push(e);};
-  // 🔥 racha más larga del grupo
-  const maxStreak=Math.max(0,...entries.map(e=>e.racha));
-  if(maxStreak>0)entries.filter(e=>e.racha===maxStreak).forEach(e=>add(e.uid,"🔥"));
-  // 🏆 PR más reciente del mes
-  const mesActual=TODAY.slice(0,7);
-  const conPR=entries.filter(e=>typeof e.lastPRAt==="string"&&e.lastPRAt.slice(0,7)===mesActual);
-  if(conPR.length)add(conPR.reduce((a,e)=>e.lastPRAt>a.lastPRAt?e:a).uid,"🏆");
-  // 📈 mayor mejora de volumen vs semana anterior (%)
-  const mejoras=entries.filter(e=>e.prevVol>0&&e.volumen>0).map(e=>({uid:e.uid,pct:(e.volumen-e.prevVol)/e.prevVol}));
-  if(mejoras.length){const best=mejoras.reduce((a,x)=>x.pct>a.pct?x:a);if(best.pct>0)add(best.uid,"📈");}
-  // 🥗 adherencia perfecta: comidas los 7 días
-  entries.filter(e=>e.comidas===7).forEach(e=>add(e.uid,"🥗"));
-  return badges;
-}
-
-const RANKING_METRICS={
-  dias:   {label:"días",  fmt:v=>v},
-  racha:  {label:"días",  fmt:v=>v},
-  volumen:{label:"kg×r",  fmt:v=>v>=1000?(v/1000).toFixed(1)+"k":v},
-  comidas:{label:"/7",    fmt:v=>v},
-};
-
-function renderRankingList(){
-  const listEl=document.getElementById("ranking-list");
-  if(!listEl||!_lbEntries)return;
-  const entries=[..._lbEntries].sort((a,b)=>b[rankingMetric]-a[rankingMetric]);
-  const badges=computeRankingBadges(entries);
-  const M=RANKING_METRICS[rankingMetric];
-  const medals=["🥇","🥈","🥉"];
-  listEl.innerHTML=entries.map((e,i)=>{
-    const v=e[rankingMetric];
-    return`<div style="display:flex;align-items:center;gap:10px;background:var(--surface${e.isMe?"":2});border:1px solid ${e.isMe?"rgba(200,245,100,0.25)":"var(--border)"};border-radius:var(--r);padding:10px 12px;margin-bottom:6px">
-      <div style="font-size:18px;width:24px;text-align:center">${medals[i]||""}</div>
-      ${e.photo?`<img src="${e.photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:""}
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:${e.isMe?600:400};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${e.isMe?" (vos)":""} <span style="font-size:12px">${(badges[e.uid]||[]).join("")}</span></div></div>
-      <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:${v>0?"var(--accent)":"var(--text3)"}">${M.fmt(v)}<span style="font-size:11px;color:var(--text3);margin-left:2px">${M.label}</span></div>
-    </div>`;
-  }).join("")+
-  `<div style="font-size:10px;color:var(--text3);margin-top:4px">🔥 mejor racha · 🏆 PR del mes · 📈 mayor mejora de volumen · 🥗 comidas los 7 días</div>`;
-}
-
-async function renderRanking(){
-  const section=document.getElementById("ranking-section");
-  const listEl=document.getElementById("ranking-list");
-  const msgEl=document.getElementById("ranking-msg");
-  if(!section) return;
-  section.style.display="block";
-  const sel=document.getElementById("ranking-metric-sel");
-  if(!fbUser||!fbDb){
-    listEl.innerHTML="";if(sel)sel.style.display="none";
-    if(msgEl){msgEl.style.display="block";msgEl.textContent="Iniciá sesión con Google para ver el ranking del grupo.";}
-    return;
-  }
-  if(!rankingOptIn()){
-    listEl.innerHTML="";if(sel)sel.style.display="none";
-    if(msgEl){msgEl.style.display="block";msgEl.textContent="Activá tu participación en Perfil para ver el ranking.";}
-    return;
-  }
-  if(msgEl) msgEl.style.display="none";
-  if(sel)sel.style.display="flex";
-  try{
-    const snap=await fbDb.collection("leaderboard").get();
-    if(snap.empty){listEl.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0">Sin datos de grupo todavía.</div>`;return;}
-    const curWeek=currentWeekLabel();
-    _lbEntries=[];
-    snap.forEach(doc=>{
-      const d=doc.data();
-      const fresh=d.weekLabel===curWeek; // métricas semanales en 0 si el dato es viejo
-      _lbEntries.push({
-        uid:doc.id,name:d.displayName||"Usuario",photo:d.photoURL||"",isMe:doc.id===fbUser.uid,
-        dias:fresh?+(d.weeklyGymDays||0):0,
-        racha:+(d.streak||0),
-        volumen:fresh?+(d.weeklyVolume||0):0,
-        comidas:fresh?+(d.weeklyFoodDays||0):0,
-        prevVol:fresh?+(d.prevWeekVolume||0):0,
-        lastPRAt:d.lastPRAt||null,
-      });
-    });
-    renderRankingList();
-  }catch(e){
-    console.warn("renderRanking error:",e);
-    listEl.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:12px 0">No se pudo cargar el ranking. Verificá las reglas de Firestore.</div>`;
-  }
-}
-
-// Detalle motivacional en HOY: a 1 día de la racha del líder — máx. 1 por día
-async function maybeShowNudge(){
-  try{
-    if(!fbUser||!fbDb||!rankingOptIn())return;
-    if(localStorage.getItem("nudgeShownDate")===TODAY)return;
-    const snap=await fbDb.collection("leaderboard").get();
-    let leader=null;
-    snap.forEach(doc=>{
-      const d=doc.data();
-      if(doc.id!==fbUser.uid&&(d.streak||0)>0&&(!leader||(d.streak||0)>leader.streak))
-        leader={name:(d.displayName||"alguien").split(" ")[0],streak:+(d.streak||0)};
-    });
-    if(!leader)return;
-    const diff=leader.streak-calcStreak().current;
-    if(diff!==1)return;
-    const box=document.getElementById("nudge-box");
-    if(!box)return;
-    box.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text2);display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <span>👀 Estás a 1 día de la racha de ${leader.name}</span>
-      <button onclick="document.getElementById('nudge-box').innerHTML=''" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;padding:0 4px">×</button>
-    </div>`;
-    localStorage.setItem("nudgeShownDate",TODAY);
-  }catch(e){}
 }
 
 async function syncFromCloud(){
@@ -1931,54 +1731,12 @@ const LOCAL_DB = [
 
 ];
 
-const ROUTINE_BASE = {
-  1:{label:"Dia 1 Pecho biceps hombro",short:"Dia 1",color:"#ff5e5e",exercises:[
-    {name:"Press banco con barra",muscle:"Pecho",schema:"1x4-6 2x6-8",sets:3,type:"compound"},
-    {name:"Press inclinado con mancuernas",muscle:"Pecho",schema:"1x8-10 2x10-12",sets:3,type:"compound"},
-    {name:"Curl de biceps con barra W",muscle:"Biceps",schema:"1x10-12 3x12-15 +DS",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales polea pie",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales mancuernas sentado",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Curl de biceps alternado",muscle:"Biceps",schema:"4 x 10-12",sets:4,type:"isolation"},
-    {name:"Cara de pajaro",muscle:"Hombro posterior",schema:"3 x 12-15",sets:3,type:"isolation"},
-  ]},
-  2:{label:"Dia 2 Espalda triceps",short:"Dia 2",color:"#ffc947",exercises:[
-    {name:"Remo con barra",muscle:"Espalda",schema:"1x4-6 2x6-8",sets:3,type:"compound"},
-    {name:"Dominadas",muscle:"Espalda",schema:"1x8-10 2x10-12",sets:3,type:"bodyweight"},
-    {name:"Press frances con barra W",muscle:"Triceps",schema:"1x10-12 3x12-15 +DS",sets:4,type:"isolation"},
-    {name:"Extension de triceps en polea soga",muscle:"Triceps",schema:"4 BISERIE 10-12",sets:4,type:"isolation"},
-    {name:"Remo con mancuerna unilateral",muscle:"Espalda",schema:"4 BISERIE 10-12",sets:4,type:"compound"},
-    {name:"Remo gironda",muscle:"Espalda",schema:"3 BISERIE 15-20",sets:3,type:"compound"},
-  ]},
-  3:{label:"Dia 3 Cuadriceps isquio hombro",short:"Dia 3",color:"#c8f564",exercises:[
-    {name:"Sentadilla con barra",muscle:"Cuadriceps",schema:"1x4-6 2x6-8",sets:3,type:"compound"},
-    {name:"Sentadilla HACK",muscle:"Cuadriceps",schema:"1x8-10 2x10-12",sets:3,type:"compound"},
-    {name:"Curl femoral acostado",muscle:"Isquiotibiales",schema:"4 x 15-20",sets:4,type:"isolation"},
-    {name:"Extension de cuadriceps",muscle:"Cuadriceps",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales mancuernas pie",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales mancuernas sentado",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-  ]},
-  4:{label:"Dia 4 Tren superior",short:"Dia 4",color:"#64b5f6",exercises:[
-    {name:"Press inclinado con barra",muscle:"Pecho",schema:"1x4-6 2x6-8",sets:3,type:"compound"},
-    {name:"Remo T",muscle:"Espalda",schema:"1x8-10 2x10-12",sets:3,type:"compound"},
-    {name:"Press banco con mancuernas",muscle:"Pecho",schema:"3+DS x 10-12",sets:3,type:"compound"},
-    {name:"Jalon al pecho agarre prono",muscle:"Espalda",schema:"3 x 10-12",sets:3,type:"compound"},
-    {name:"Curl de biceps con barra olimpica",muscle:"Biceps",schema:"4 BISERIE 10-12",sets:4,type:"isolation"},
-    {name:"Extension de triceps unilateral",muscle:"Triceps",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-  ]},
-  5:{label:"Dia 5 Isquio cuadriceps hombro",short:"Dia 5",color:"#b39ddb",exercises:[
-    {name:"Peso muerto rumano",muscle:"Isquiotibiales",schema:"1x4-6 3x6-8",sets:4,type:"compound"},
-    {name:"Prensa 45",muscle:"Cuadriceps",schema:"1x8-10 3x10-12",sets:4,type:"compound"},
-    {name:"Curl lateral acostado",muscle:"Isquiotibiales",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Extension de cuadriceps",muscle:"Cuadriceps",schema:"4+DS x 15-20",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales polea pie",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-    {name:"Elevaciones laterales mancuernas sentado",muscle:"Hombro",schema:"4 BISERIE 12-15",sets:4,type:"isolation"},
-  ]}
-};
-
 // ─── STORAGE ──────────────────────────────────────────────────────
 function ls(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}}
 function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-function getProfile(){return ls("profile",{peso:78,altura:173,edad:20,sexo:"m",act:1.375,obj:"deficit"})}
+// Los valores reales (altura, edad, sexo, peso, % grasa) viven en Firestore (SYNC_KEYS "profile")
+// y se precargan al iniciar sesión. Estos defaults genéricos solo cubren el arranque en frío.
+function getProfile(){return ls("profile",{peso:70,altura:170,edad:25,sexo:"m",obj:"deficit"})}
 // ─── DÍAS PARTICIONADOS POR MES ───────────────────────────────────
 // localStorage: days_YYYY-MM (un objeto {fecha:datos} por mes) + daysMonths (índice)
 // Firestore: users/{uid}/months/{YYYY-MM} — evita el techo de 1MB por documento
@@ -2075,7 +1833,7 @@ function getSavedRoutines(){
   const existing=ls("savedRoutines",[]);
   if(existing.length===0){
     // Migrar solo si ya había una userRoutine guardada (usuario existente pre-migración)
-    // Usuarios nuevos no heredan ROUTINE_BASE — empiezan sin rutina
+    // Sin userRoutine previa → sin rutinas (se cargan por el importador, como dato en Firestore)
     const old=ls("userRoutine",null);
     if(!old)return [];
     const migrated=[{id:"main",name:"Mi rutina",data:old}];
@@ -2108,19 +1866,6 @@ function saveUserRoutine(r){
   if(idx>=0)arr[idx].data=r; else arr.unshift({id:"main",name:"Mi rutina",data:r});
   saveSavedRoutines(arr);
 }
-function recoverMainRoutine(){
-  if(!confirm("¿Recuperar la rutina original de 5 días? Esto reemplazará la rutina \"Mi rutina\" pero no borra tu historial de ejercicios."))return;
-  const data=JSON.parse(JSON.stringify(ROUTINE_BASE));
-  ss("userRoutine",data);syncToCloud("userRoutine",data);
-  const arr=getSavedRoutines();
-  const idx=arr.findIndex(x=>x.id==="main");
-  if(idx>=0)arr[idx].data=data; else arr.unshift({id:"main",name:"Mi rutina",data});
-  saveSavedRoutines(arr);
-  currentSessionRoutineId=null;
-  renderGym();
-  renderRoutineEditor();
-  showToast("Rutina original recuperada ✓","ok");
-}
 // CUSTOM FOODS (user despensa)
 function getCustomFoods(){return ls("customFoods",[])}
 function saveCustomFoods(arr){ss("customFoods",arr);syncToCloud("customFoods",arr);}
@@ -2133,17 +1878,49 @@ function stepsKcal(s){return Math.round((+s||0)*0.04)}
 function exerciseKcal(ex,sets,kg){const met=GYM_METS[ex.type||"isolation"];let t=0;for(const s of sets){const r=+s.reps||0;if(!r)continue;t+=met*kg*((r*3/60+0.75)/60);}return Math.round(t)}
 function calcGymKcal(gymData,kg){const routine=getRoutine();let t=0;for(const dn in gymData){const day=routine[dn];if(!day)continue;for(const ei in gymData[dn]){const ex=day.exercises[+ei];if(!ex)continue;t+=exerciseKcal(ex,gymData[dn][ei]||[],kg);}}return t}
 function getTotals(foods){return(foods||[]).reduce((a,f)=>({cal:a.cal+(+f.cal||0),prot:a.prot+(+f.prot||0),carb:a.carb+(+f.carb||0),fat:a.fat+(+f.fat||0)}),{cal:0,prot:0,carb:0,fat:0})}
+
+// ─── ENERGÍA Y MACROS: ÚNICA DEFINICIÓN PARA TODA LA APP ──────────
+// TDEE = BMR (Mifflin-St Jeor) + kcal de pasos + kcal de ejercicio. Sin factor de actividad:
+// el movimiento se suma medido, así no se cuenta dos veces.
+//  · HOY / Semana / Mes usan la actividad REGISTRADA del día.
+//  · Perfil y el planificador usan la actividad TÍPICA (promedio de tus últimos 28 días).
+// Objetivo, proteína y reparto de macros salen siempre de macroTargets().
+function calcTDEE(p,pasosKcal,ejercicioKcal){return Math.round(calcBMR(p))+(pasosKcal||0)+(ejercicioKcal||0);}
+// Masa magra estimada si hay % de grasa cargado (null si no)
+function leanMass(p){const bf=+p.grasa;return bf>0&&bf<60?+(p.peso*(1-bf/100)).toFixed(1):null;}
+// g de proteína por kg — sobre masa magra si hay % de grasa, si no sobre peso total
+const PROT_G_KG={total:{descanso:2.0,entreno:2.3},magra:{descanso:2.4,entreno:2.7}};
+function protTarget(p,train){
+  const k=train?"entreno":"descanso",lbm=leanMass(p);
+  return Math.round(lbm?lbm*PROT_G_KG.magra[k]:p.peso*PROT_G_KG.total[k]);
+}
+function macroTargets(p,tdee,train){
+  const eat=Math.round(p.obj==="deficit"?tdee-400:p.obj==="surplus"?tdee+200:tdee);
+  const prot=protTarget(p,train);
+  const fat=Math.round(eat*0.25/9);
+  const carb=Math.max(0,Math.round((eat-prot*4-fat*9)/4));
+  return{eat,prot,fat,carb};
+}
+// Actividad típica para días futuros o genéricos: promedio de los últimos 28 días (sin hoy)
+function typicalActivity(){
+  const p=getProfile(),allDays=getDays();
+  let pasos=0,nPasos=0,ej=0,nEj=0;
+  for(let i=1;i<=28;i++){
+    const d=new Date(TODAY+"T12:00:00");d.setDate(d.getDate()-i);
+    const td=allDays[todayKey(d)];if(!td)continue;
+    if(td.steps>0){pasos+=stepsKcal(td.steps);nPasos++;}
+    const e=(td.gymOn?calcGymKcal(td.gym||{},p.peso):0)+(td.boxingOn?boxingKcal(td.boxingDuration||90,p.peso):0)+getExtraActivitiesKcal(td);
+    if(e>0){ej+=e;nEj++;}
+  }
+  return{pasos:nPasos?Math.round(pasos/nPasos):0,ejercicio:nEj?Math.round(ej/nEj):300,diasEj:nEj};
+}
 function getDayTargets(td){
   const p=getProfile(),bmr=Math.round(calcBMR(p)),sc=stepsKcal(td.steps||0);
   const gc=td.gymOn?calcGymKcal(td.gym||{},p.peso):0;
   const bc=td.boxingOn?boxingKcal(td.boxingDuration||90,p.peso):0;
   const ec=getExtraActivitiesKcal(td);
-  const burned=bmr+sc+gc+bc+ec;
-  const eat=Math.round(p.obj==="deficit"?burned-400:p.obj==="surplus"?burned+200:burned);
-  const prot=Math.round(p.peso*(td.gymOn||td.boxingOn?2.3:2.0));
-  const fat=Math.round(eat*0.25/9);
-  const carb=Math.max(0,Math.round((eat-prot*4-fat*9)/4));
-  return{bmr,sc,gc,bc,burned,eat,prot,fat,carb};
+  const burned=calcTDEE(p,sc,gc+bc+ec);
+  return{bmr,sc,gc,bc,burned,...macroTargets(p,burned,!!(td.gymOn||td.boxingOn))};
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────
@@ -2221,12 +1998,10 @@ function onSearchInput(){
 }
 function onSearchFocus(){const q=document.getElementById("food-search").value.trim();if(q.length>=2)doSearch(q);}
 function quickSearch(q){document.getElementById("food-search").value=q;doSearch(q);}
-async function doSearch(q){
+function doSearch(q){
   const el=document.getElementById("search-results");
-  const localResults=searchFoods(q);
-  let sharedResults=[];
-  if(fbUser && fbDb){ await loadSharedFoods(); sharedResults=searchSharedFoods(q); }
-  const allResults=[...localResults,...sharedResults];
+  // Orígenes: base local + despensa (getAllFoods). Sin base compartida.
+  const allResults=searchFoods(q);
   // Decisión inteligente: ¿es una entrada compuesta ("milanesa con puré", "2 empanadas y una coca")?
   const comp=parseCompoundLocal(q);
   let compoundHtml="";
@@ -2273,7 +2048,7 @@ async function doSearch(q){
       </div>
       <div class="sri-right">
         <div class="sri-kcal">${item.c} kcal</div>
-        <div class="sri-badge ${item.src==="custom"?"custom":item.src==="shared"?"shared":item.src==="regional"||item.src==="fastfood"?"regional":""}">${item.src==="custom"?"tuyo":item.src==="shared"?"☁️":"base"}</div>
+        <div class="sri-badge ${item.src==="custom"?"custom":item.src==="regional"||item.src==="fastfood"?"regional":""}">${item.src==="custom"?"tuyo":"base"}</div>
       </div>
     </div>`).join("")+
     `<div class="search-no-result" style="border-top:1px solid var(--border)">
@@ -2698,13 +2473,7 @@ function renderDespensa(){
   const q=normalizeStr(document.getElementById("despensa-search")?.value||"");
   const filtered=q?foods.filter(f=>normalizeStr(f.name).includes(q)):foods;
   const el=document.getElementById("despensa-list");
-  if(!filtered.length){
-    el.innerHTML=`<div class="empty-state" style="padding:40px 18px">
-      <div style="font-size:32px;margin-bottom:8px">🫙</div>
-      <div style="font-weight:500;margin-bottom:4px">Tu despensa está vacía</div>
-      <div style="font-size:13px">Agregá tus propios alimentos y comidas con el botón + Nuevo</div>
-    </div>`;return;
-  }
+  if(!filtered.length){el.innerHTML=`<div class="empty-state">${q?"Sin resultados":"Sin alimentos"}</div>`;return;}
   el.innerHTML=filtered.map(f=>`
     <div class="despensa-item">
       ${f.thumb?`<img src="${f.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:var(--r-sm);flex-shrink:0;margin-right:10px">`:""}
@@ -2716,7 +2485,6 @@ function renderDespensa(){
       </div>
       <div class="di-actions">
         <button class="icon-btn" onclick='selectFood({n:${JSON.stringify(f.name)},c:${f.cal},p:${f.prot},ch:${f.carb},g:${f.fat},cat:${JSON.stringify(f.cat||"🍽️")},src:"custom"})' title="Agregar al registro de hoy">+</button>
-        <button class="icon-btn" onclick="shareCustomFood(${f.id})" title="${f.sharedId?"Ya compartido":"Compartir con todos"}" style="${f.sharedId?"opacity:0.4;cursor:default":""}">☁️</button>
         <button class="icon-btn" onclick="showEditFoodModal(${f.id})" title="Editar">✏️</button>
         <button class="icon-btn del" onclick="deleteCustomFood(${f.id})" title="Eliminar">🗑</button>
       </div>
@@ -2858,7 +2626,7 @@ function renderGym(){
   if(!Object.keys(routine).length){
     // Usuario sin rutina: mostrar prompt de creación
     tabs.innerHTML="";
-    if(exList)exList.innerHTML=`<div style="text-align:center;padding:32px 18px;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px">🏋️</div><div style="font-size:15px;font-weight:500;color:var(--text2);margin-bottom:8px">Todavía no tenés una rutina</div><div style="font-size:13px;margin-bottom:20px">Creá tu propia rutina de entrenamiento para empezar a registrar tus series y seguir tu progreso.</div><button class="btn primary wide" onclick="openRoutineModal()">Crear mi rutina</button></div>`;
+    if(exList)exList.innerHTML=`<div style="padding:24px 18px"><button class="btn primary wide" onclick="openRoutineEditor()">⚙️ Rutinas</button></div>`;
     return;
   }
   tabs.innerHTML=Object.entries(routine).map(([d,r])=>`<button class="day-tab${+d===currentGymDay?" active":""}" onclick="selectGymDay(${d})" style="${+d===currentGymDay?"background:"+r.color+";border-color:"+r.color+";color:#0e0e10":""}">${r.short}</button>`).join("");
@@ -2941,7 +2709,6 @@ function saveAllSets(numEx,date){
   // Detener timers
   stopRestTimer();
   stopGymTimer();
-  updateLeaderboard();
   showToast(elapsed>60?"Sesión guardada · "+formatDuration(elapsed):"Sesión guardada","ok");
 }
 function showAddExModal(){
@@ -3272,15 +3039,10 @@ function frequentFoods(){
   return[...new Set([...top,...desp])].slice(0,20);
 }
 
-// Objetivo de macros para planificar (TDEE por factor de actividad + ajuste entreno)
+// Objetivo de macros para planificar: misma definición que HOY, con actividad típica
 function planTargets(train){
-  const p=getProfile();
-  const tdee=Math.round(calcBMR(p)*p.act+(train?250:0));
-  const eat=Math.round(p.obj==="deficit"?tdee-400:p.obj==="surplus"?tdee+200:tdee);
-  const prot=Math.round(p.peso*(train?2.3:2.0));
-  const fat=Math.round(eat*0.25/9);
-  const carb=Math.max(0,Math.round((eat-prot*4-fat*9)/4));
-  return{eat,prot,carb,fat};
+  const p=getProfile(),a=typicalActivity();
+  return macroTargets(p,calcTDEE(p,a.pasos,train?a.ejercicio:0),train);
 }
 
 function openPlanTomorrow(){
@@ -3750,10 +3512,9 @@ function renderSemana(){
   weekDates.forEach(ds=>{const d=allDays[ds];if(!d)return;const t=getTotals(d.foods||[]);if(t.cal>0)wDays++;wCal+=t.cal;wProt+=t.prot;wSteps+=(d.steps||0);const tgt=getDayTargets(d);wBurned+=tgt.burned;if(d.gymOn||d.boxingOn||(d.extraActivities&&d.extraActivities.length))wActive++;});
   document.getElementById("wk-sum-cards").innerHTML=`<div class="card"><div class="card-label">Días registrados</div><div class="card-val">${wDays}/7</div></div><div class="card"><div class="card-label">Sesiones activas</div><div class="card-val">${wActive}</div><div class="card-sub">gym + boxeo</div></div><div class="card"><div class="card-label">Proteína prom.</div><div class="card-val">${wDays?Math.round(wProt/wDays):0}<span style="font-size:13px">g</span></div></div><div class="card"><div class="card-label">Pasos totales</div><div class="card-val" style="font-size:18px">${(wSteps/1000).toFixed(1)}<span style="font-size:13px">k</span></div></div>`;
   if(wDays>0){const diff=Math.round(wCal-wBurned);const isD=diff<0;document.getElementById("week-balance").innerHTML=`<div class="balance-title">Balance semanal</div><div class="brow"><span class="bkey">Gasto acumulado</span><span class="bval">${Math.round(wBurned)} kcal</span></div><div class="brow"><span class="bkey">Consumido total</span><span class="bval">${Math.round(wCal)} kcal</span></div><div class="brow"><span class="bkey">Proteína promedio</span><span class="bval">${wDays?Math.round(wProt/wDays):0}g/día</span></div><div class="brow btotal"><span class="bkey" style="font-weight:500">Resultado</span><span class="pill ${isD?"pill-g":Math.abs(diff)<=300?"pill-a":"pill-r"}">${isD?"Déficit "+Math.abs(diff)+" kcal ✓":"Exceso "+diff+" kcal"}</span></div>`;}
-  else document.getElementById("week-balance").innerHTML=`<div class="balance-title">Balance semanal</div><div style="padding:16px;font-size:13px;color:var(--text3)">Registrá comidas esta semana.</div>`;
+  else document.getElementById("week-balance").innerHTML=`<div class="balance-title">Balance semanal</div><div style="padding:16px;font-size:13px;color:var(--text3)">Sin registros esta semana.</div>`;
   // Render charts
   renderCharts(weekDates, allDays);
-  renderRanking();
 }
 
 function renderMes(){
@@ -3792,7 +3553,6 @@ function renderMes(){
   renderBarChart("chart-cal",data,[{key:"cal",color:"var(--accent)"},{key:"burned",color:"var(--red)"}],"kcal");
   renderBarChart("chart-prot",data,[{key:"prot",color:"var(--teal)"},{key:"protGoal",color:"rgba(77,208,160,0.2)"}],"g");
   renderBarChart("chart-macros",data,[{key:"carb",color:"var(--purple)"},{key:"fat",color:"var(--amber)"}],"g");
-  renderRanking();
 }
 
 function renderAnio(){
@@ -3831,13 +3591,20 @@ function renderAnio(){
   }else{
     extra.style.display="none";
   }
-  renderRanking();
 }
 
 function showDayDetail(date){const allDays=getDays(),d=allDays[date]||{foods:[],steps:0,gym:{}},t=getTotals(d.foods||[]),tgt=getDayTargets(d);document.getElementById("day-det-box").innerHTML=`<div class="day-det"><div class="day-det-hdr"><span style="font-size:13px;font-weight:500;font-family:var(--mono)">${date}</span><button style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer" onclick="document.getElementById('day-det-box').innerHTML=''">×</button></div><div class="brow"><span class="bkey">Consumido</span><span class="bval">${Math.round(t.cal)} kcal</span></div><div class="brow"><span class="bkey">Gasto total</span><span class="bval">${tgt.burned} kcal</span></div><div class="brow"><span class="bkey">Proteínas</span><span class="bval">${Math.round(t.prot)}g</span></div><div class="brow"><span class="bkey">Gym 🏋️</span><span class="bval">${d.gymOn?"Sí (+"+tgt.gc+" kcal)":"No"}</span></div><div class="brow"><span class="bkey">Boxeo 🥊</span><span class="bval">${d.boxingOn?"Sí "+( d.boxingDuration||90)+"min (+"+tgt.bc+" kcal)":"No"}</span></div></div>`;}
 
 // ─── PERFIL ───────────────────────────────────────────────────────
-function renderPerfil(){const p=getProfile();document.getElementById("p-peso").value=p.peso;document.getElementById("p-altura").value=p.altura;document.getElementById("p-edad").value=p.edad;document.getElementById("p-sexo").value=p.sexo;document.getElementById("p-act").value=p.act;document.getElementById("p-obj").value=p.obj;showMacrosResult();const k=document.getElementById("p-gemini-key");if(k)k.value=getGeminiKey();const rc=document.getElementById("ranking-optin-chk");if(rc)rc.checked=rankingOptIn();renderDietConfig();renderPhotoLibStats();renderWeightChart();}
+function renderPerfil(){
+  const p=getProfile(),set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??"";};
+  set("p-peso",p.peso);set("p-grasa",p.grasa||"");set("p-altura",p.altura);set("p-edad",p.edad);set("p-sexo",p.sexo);set("p-obj",p.obj);
+  const sum=document.getElementById("p-fijos-sum");
+  if(sum)sum.textContent=`Datos fijos: ${p.altura} cm · ${p.edad} años · ${p.sexo==="f"?"Femenino":"Masculino"}`;
+  showMacrosResult();
+  const k=document.getElementById("p-gemini-key");if(k)k.value=getGeminiKey();
+  renderDietConfig();renderPhotoLibStats();renderWeightChart();
+}
 
 function renderWeightChart(){
   const wh = ls("weightHistory",[]);
@@ -4113,10 +3880,10 @@ async function searchFoodWithGemini(query){
 // ─── REGISTRO CONVERSACIONAL DE COMIDAS ──────────────────────────
 let _nlItems=null;
 
-// Busca el alimento en base local + despensa + sharedFoods (cache) por nombre normalizado
+// Busca el alimento en base local + despensa por nombre normalizado
 function findLocalFood(nombre){
   const nn=normalizeStr(nombre);
-  const pool=[...getAllFoods(),...(_sfCache||[])];
+  const pool=getAllFoods();
   return pool.find(f=>normalizeStr(f.n)===nn)
       || pool.find(f=>normalizeStr(f.n).includes(nn)||nn.includes(normalizeStr(f.n)))
       || null;
@@ -4138,7 +3905,6 @@ async function parseNaturalFood(){
   if(!key){showToast("Primero guardá tu API Key de Gemini en Perfil","err");return;}
   const btn=document.getElementById("nl-send-btn");
   if(btn){btn.disabled=true;btn.textContent="…";}
-  if(fbUser&&fbDb)await loadSharedFoods(); // para el lookup local
   const prompt=`Sos un nutricionista experto en tablas nutricionales reconocidas (USDA FoodData Central, tablas argentinas SARA/ARGENFOOD). Un usuario argentino describe en lenguaje natural lo que comió. Analizá el texto y devolvé SOLO este JSON:
 {"items":[{"nombre":"...","calorias_100g":N,"proteinas_100g":N,"carbohidratos_100g":N,"grasas_100g":N,"unidad":"porcion|vaso|unidad|plato|taza|copa|lata|feta|rebanada|cda|g","gramos_por_unidad":N,"cantidad":N,"confianza":"alta|media|baja"}]}
 
@@ -4238,12 +4004,11 @@ function confirmNLItems(){
       name:`${it.cat} ${it.nombre} (${qtyLabel} ≈${m.totalG}g)`,
       cal:m.cal,prot:m.prot,carb:m.carb,fat:m.fat
     });
-    // Alimento nuevo → guardarlo en Despensa con sus porciones aprendidas + compartir
+    // Alimento nuevo → guardarlo en Despensa con sus porciones aprendidas
     if(!it.local&&!customs.find(f=>normalizeStr(f.name)===normalizeStr(it.nombre))){
       const porciones=[{unidad:it.unidad,gramos:Math.round(it.gpU)}];
       customs.push({id:getNextFoodId(),name:it.nombre,cal:it.c,prot:it.p,carb:it.ch,fat:it.g,cat:"🤖",notes:"Chat IA",createdAt:TODAY,src:"gemini",porciones});
       savedNew++;
-      addToSharedFoods({n:it.nombre,c:it.c,p:it.p,ch:it.ch,g:it.g,cat:"🤖",porciones},"gemini"); // fire-and-forget
     }
   }
   if(savedNew)saveCustomFoods(customs);
@@ -4951,112 +4716,18 @@ async function doGeminiSearch(query){
   if(!exists){
     foods.push({id:getNextFoodId(),name:food.n,cal:food.c,prot:food.p,carb:food.ch,fat:food.g,cat:food.cat,notes:"Gemini",createdAt:TODAY,src:"gemini"});
     saveCustomFoods(foods);
-    addToSharedFoods(food, "gemini"); // fire-and-forget
   }
   document.getElementById("search-results").classList.remove("show");
   selectFood(food);
 }
-// ─── SHARED FOODS ────────────────────────────────────────────────────
-const SF_CACHE_TTL = 5 * 60 * 1000;
-
-async function loadSharedFoods(){
-  if(_sfCache && Date.now() - _sfCacheTime < SF_CACHE_TTL) return _sfCache;
-  if(!fbDb || !fbUser) return [];
-  try {
-    const snap = await fbDb.collection("sharedFoods").where("status","==","approved").get();
-    _sfCache = snap.docs.map(d => {
-      const dat = d.data();
-      const o = {n:dat.nombre, c:dat.cal, p:dat.prot, ch:dat.carb, g:dat.fat,
-              cat:dat.cat||"☁️", src:"shared", _sfId:d.id, uploadedBy:dat.uploadedBy};
-      const p0 = dat.porciones?.[0];
-      if(p0?.gramos){o._gu=p0.unidad;o._gpU=p0.gramos;o._allowed=_GEMINI_UNIT_ALLOWED[p0.unidad]||null;}
-      return o;
-    });
-    _sfCacheTime = Date.now();
-  } catch(e) {
-    console.warn("sharedFoods load:", e);
-    _sfCache = _sfCache || [];
-  }
-  return _sfCache;
-}
-
-function searchSharedFoods(q){
-  if(!_sfCache || !_sfCache.length) return [];
-  const nq = normalizeStr(q);
-  const localNames = new Set(getAllFoods().map(f => normalizeStr(f.n)));
-  return _sfCache.filter(f => normalizeStr(f.n).includes(nq) && !localNames.has(normalizeStr(f.n))).slice(0, 6);
-}
-
-async function addToSharedFoods(food, source){
-  if(!fbDb || !fbUser) return null;
-  const nombre = food.n || food.name || "";
-  if(!nombre || !food.c) return null;
-  try {
-    // Buscar duplicado entre los aprobados (las reglas no permiten leer pendientes ajenos)
-    const existing = await fbDb.collection("sharedFoods").where("nombre","==",nombre).where("status","==","approved").limit(1).get();
-    if(!existing.empty){ window._sfLastStatus = "approved"; return existing.docs[0].id; }
-    let status = "approved";
-    if(source === "manual"){
-      const check = await verifySharedFoodMacros(nombre, {cal:food.c,prot:food.p,carb:food.ch,fat:food.g});
-      if(check === "suspicious"){
-        const ok = confirm(`🤖 Los macros de "${nombre}" parecen inusuales para ese alimento.\n\nCal:${food.c} P:${food.p}g C:${food.ch}g G:${food.g}g (por 100g)\n\n¿Compartir igual? (quedará en revisión hasta que lo apruebe el admin)`);
-        if(!ok) return null; // el usuario prefiere corregirlo primero
-        status = "pending";
-      }
-      // check === "ok" o "unknown" (sin API key / error) → approved
-    }
-    const data = {
-      nombre, cal: food.c||0, prot: food.p||0, carb: food.ch||0, fat: food.g||0,
-      cat: food.cat||"🍽️", uploadedBy: fbUser.uid,
-      uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      source, status
-    };
-    if(food.porciones?.length) data.porciones = food.porciones;
-    const ref = await fbDb.collection("sharedFoods").add(data);
-    _sfCache = null; // invalidar cache
-    window._sfLastStatus = status;
-    return ref.id;
-  } catch(e) {
-    console.warn("addToSharedFoods:", e);
-    return null;
-  }
-}
-
-// Devuelve "ok" | "suspicious" | "unknown"
-async function verifySharedFoodMacros(nombre, macros){
-  if(!getGeminiKey()) return "unknown";
-  const prompt = `¿Son estos valores nutricionales por 100g razonables para "${nombre}"? Respondé SOLO "si" o "no".\nCal:${macros.cal} Prot:${macros.prot}g Carb:${macros.carb}g Grasas:${macros.fat}g`;
-  try {
-    const res = await geminiPost(getGeminiKey(), {contents:[{parts:[{text:prompt}]}]});
-    if(!res||!res.ok) return "unknown";
-    const data = await res.json();
-    const text = (data?.candidates?.[0]?.content?.parts?.[0]?.text||"").toLowerCase().trim();
-    if(text.startsWith("si")||text.startsWith("sí")) return "ok";
-    if(text.startsWith("no")) return "suspicious";
-    return "unknown";
-  } catch(e) { console.warn("verifySharedFoodMacros:", e); return "unknown"; }
-}
-
-async function shareCustomFood(id){
-  const foods = getCustomFoods();
-  const f = foods.find(x => x.id === id);
-  if(!f) return;
-  if(f.sharedId){ showToast("Ya está compartido ☁️","ok"); return; }
-  if(!fbUser){ showToast("Iniciá sesión para compartir","err"); return; }
-  showToast("Compartiendo...","ok");
-  const source = ["gemini","label","recipe","barcode"].includes(f.src) ? f.src : "manual";
-  const docId = await addToSharedFoods({n:f.name,c:f.cal,p:f.prot,ch:f.carb,g:f.fat,cat:f.cat}, source);
-  if(docId){
-    const idx = foods.findIndex(x => x.id === id);
-    if(idx >= 0){ foods[idx].sharedId = docId; saveCustomFoods(foods); }
-    renderDespensa();
-    showToast(window._sfLastStatus === "pending" ? "Compartido — en revisión ⏳" : "Compartido con todos ✓", "ok");
-  }
-  // docId null = canceló en el diálogo de macros inusuales o hubo error (ya avisado)
-}
-
 function saveProfile(){
-  const p={peso:+document.getElementById("p-peso").value||78,altura:+document.getElementById("p-altura").value||173,edad:+document.getElementById("p-edad").value||20,sexo:document.getElementById("p-sexo").value,act:+document.getElementById("p-act").value||1.375,obj:document.getElementById("p-obj").value};
+  const prev=getProfile(),num=id=>+document.getElementById(id).value||0;
+  // Campo vacío = conservar el valor guardado (los datos fijos vienen precargados de Firestore)
+  const p={...prev,
+    peso:num("p-peso")||prev.peso,altura:num("p-altura")||prev.altura,edad:num("p-edad")||prev.edad,
+    sexo:document.getElementById("p-sexo").value,obj:document.getElementById("p-obj").value,
+    grasa:num("p-grasa")||null};
+  // p.act se conserva sin usar: el mismo doc de Firestore lo lee la app comercial pausada
   ss("profile",p);syncToCloud("profile",p);
   // Registrar peso en historial (una entrada por día, sobrescribe si ya existe)
   if(p.peso>0){
@@ -5073,9 +4744,26 @@ function validatePerfil(){
   const el=document.getElementById("p-validation"),msgs=[];
   if(peso&&(peso<30||peso>300))msgs.push("Peso fuera de rango (30–300 kg)");
   if(altura&&(altura<100||altura>250))msgs.push("Altura fuera de rango (100–250 cm)");
+  const grasa=+document.getElementById("p-grasa").value;
+  if(grasa&&(grasa<3||grasa>50))msgs.push("% de grasa fuera de rango (3–50)");
   if(el){el.textContent=msgs.join(" · ");el.style.display=msgs.length?"block":"none";}
 }
-function showMacrosResult(){const p=getProfile(),bmr=Math.round(calcBMR(p)),tdee=Math.round(bmr*p.act),target=p.obj==="deficit"?tdee-400:p.obj==="surplus"?tdee+200:tdee,prot=Math.round(p.peso*2.2),fat=Math.round(target*0.25/9),carb=Math.max(0,Math.round((target-prot*4-fat*9)/4));const objL={deficit:"Perder grasa",recomp:"Recomposición",surplus:"Ganar músculo"};document.getElementById("macros-result").innerHTML=`<div class="mr-title">Macros base (sin actividad extra)</div><div class="mr-row"><span class="mr-name">Objetivo</span><span class="mr-val" style="font-size:13px;color:var(--accent)">${objL[p.obj]}</span></div><div class="mr-row"><span class="mr-name">BMR</span><span class="mr-val">${bmr} kcal</span></div><div class="mr-row"><span class="mr-name">TDEE</span><span class="mr-val">${tdee} kcal</span></div><div class="mr-row"><span class="mr-name">Proteínas</span><span class="mr-val" style="color:var(--teal)">${prot}g</span></div><div class="mr-row"><span class="mr-name">Carbohidratos</span><span class="mr-val" style="color:var(--purple)">${carb}g</span></div><div class="mr-row"><span class="mr-name">Grasas</span><span class="mr-val" style="color:var(--amber)">${fat}g</span></div><div style="padding:10px 14px;font-size:11px;color:var(--text3)">La meta real se ajusta cada día según pasos, gym y boxeo.</div>`;}
+function showMacrosResult(){
+  const p=getProfile(),a=typicalActivity(),bmr=Math.round(calcBMR(p)),lbm=leanMass(p);
+  const tdeeD=calcTDEE(p,a.pasos,0),tdeeE=calcTDEE(p,a.pasos,a.ejercicio);
+  const d=macroTargets(p,tdeeD,false),e=macroTargets(p,tdeeE,true);
+  const objL={deficit:"Perder grasa (−400)",recomp:"Recomposición",surplus:"Ganar músculo (+200)"};
+  const row=(n,v1,v2,c)=>`<div class="mr-row"><span class="mr-name">${n}</span><span class="mr-val"${c?` style="color:${c}"`:""}>${v1} <span style="color:var(--text3)">/</span> ${v2}</span></div>`;
+  document.getElementById("macros-result").innerHTML=`<div class="mr-title">Descanso / Entreno</div>
+    <div class="mr-row"><span class="mr-name">Objetivo</span><span class="mr-val" style="font-size:13px;color:var(--accent)">${objL[p.obj]||p.obj}</span></div>
+    <div class="mr-row"><span class="mr-name">BMR</span><span class="mr-val">${bmr} kcal</span></div>
+    ${row("TDEE",tdeeD,tdeeE+" kcal")}
+    ${row("Meta kcal",d.eat,e.eat+" kcal","var(--accent)")}
+    ${row("Proteínas",d.prot,e.prot+"g","var(--teal)")}
+    ${row("Carbohidratos",d.carb,e.carb+"g","var(--purple)")}
+    ${row("Grasas",d.fat,e.fat+"g","var(--amber)")}
+    <div style="padding:10px 14px;font-size:11px;color:var(--text3);line-height:1.5">TDEE = BMR + pasos + ejercicio. Acá con tu actividad típica de los últimos 28 días (pasos ≈${a.pasos} kcal/día · ejercicio ≈${a.ejercicio} kcal${a.diasEj?"":" estimado"}); en HOY se usa la registrada.<br>Proteína ${lbm?`sobre masa magra ≈${lbm} kg (${PROT_G_KG.magra.descanso}/${PROT_G_KG.magra.entreno} g/kg)`:`sobre peso total (${PROT_G_KG.total.descanso}/${PROT_G_KG.total.entreno} g/kg) — cargá tu % de grasa para calcularla sobre masa magra`}.</div>`;
+}
 
 // ─── NAV ──────────────────────────────────────────────────────────
 
@@ -5501,7 +5189,6 @@ async function onBarcodeDetected(code){
       };
       closeBarcodeModal();
       selectFood(food);
-      addToSharedFoods(food, "barcode"); // fire-and-forget
     }else{
       document.getElementById("barcode-status").textContent="Producto no encontrado en Open Food Facts. Podés fotografiar la etiqueta nutricional.";
       document.getElementById("barcode-code-found").value=code;
@@ -5564,7 +5251,7 @@ function renderRoutineEditor(){
   if(normalSec)normalSec.style.display=isDraft?"none":"";
   if(resetBtn)resetBtn.style.display=isDraft?"none":"";
   if(!isDraft)renderRoutineLibrary();
-  const r=isDraft?draftRoutine:getUserRoutine();
+  const r=(isDraft?draftRoutine:getUserRoutine())||{};
   const label=document.getElementById("routine-edit-label");
   if(label){
     if(isDraft){label.textContent="Ejercicios del borrador";}
@@ -5611,7 +5298,6 @@ function saveDraft(){
 function getAllExerciseSuggestions(){
   const seen=new Set(),list=[];
   const add=ex=>{if(!ex?.name)return;const key=normalizeStr(ex.name);if(!seen.has(key)){seen.add(key);list.push({name:ex.name,muscle:ex.muscle||"",type:ex.type||"isolation"});}};
-  Object.values(ROUTINE_BASE).forEach(d=>d.exercises.forEach(add));
   getSavedRoutines().forEach(r=>Object.values(r.data||{}).forEach(d=>(d.exercises||[]).forEach(add)));
   Object.values(ls("customExercises",{})).forEach(arr=>arr.forEach(add));
   return list;
@@ -5689,8 +5375,8 @@ function deleteBaseExercise(dayN,ei){
   }
   if(!confirm("¿Eliminar este ejercicio de tu rutina base?"))return;
   // Siempre lee de la rutina PRINCIPAL, nunca del override de sesión
-  const r=ls("userRoutine",null)||JSON.parse(JSON.stringify(ROUTINE_BASE));
-  if(!r[dayN])return;
+  const r=ls("userRoutine",null);
+  if(!r||!r[dayN])return;
   r[dayN].exercises.splice(ei,1);
   saveUserRoutine(r);
   renderRoutineEditor();
@@ -5707,7 +5393,7 @@ function addExToCurrentRoutineDay(){
   showAddExModal();
 }
 function resetRoutine(){
-  if(!confirm("¿Resetear la rutina a los valores por defecto? Tu historial no se borra."))return;
+  if(!confirm("¿Borrar la rutina principal? Tu historial no se borra. Para volver a cargarla usá el importador."))return;
   localStorage.removeItem("userRoutine");
   syncToCloud("userRoutine",null);
   closeRoutineModal();
@@ -5914,7 +5600,6 @@ function checkForPR(ei,sets,dayN,date){
   if(!prev)return; // primer registro de este ejercicio
   const newMaxVol=Math.max(0,...sets.filter(s=>s.peso&&s.reps).map(s=>+s.peso*+s.reps));
   if(newMaxVol>prev.vol){
-    localStorage.setItem("lastPRDate",date); // alimenta la insignia 🏆 del ranking
     showPRCelebration(ei);
   }
 }
@@ -6340,55 +6025,6 @@ function saveRecipeToDespensa(){
   closeRecipeModal();
   if(document.getElementById("sec-despensa")?.classList.contains("active"))renderDespensa();
   showToast(name+" guardado en Despensa ✓","ok");
-}
-
-// ─── BORRADO DE CUENTA ────────────────────────────────────────────
-async function deleteMyAccount(){
-  if(!fbUser){showToast("Iniciá sesión primero para eliminar tu cuenta","err");return;}
-  const typed=prompt("⚠️ Esto elimina PERMANENTEMENTE tu cuenta y todos tus datos: historial, despensa, rutinas y tu usuario.\n\nLos alimentos que compartiste con la comunidad quedan pero anonimizados.\n\nPara confirmar, escribí: ELIMINAR");
-  if(typed===null)return; // canceló
-  if(typed.trim().toUpperCase()!=="ELIMINAR"){showToast("Confirmación incorrecta — no se borró nada","err");return;}
-  const uid=fbUser.uid;
-  showToast("Eliminando tu cuenta...","ok");
-  try{
-    // Helper: commitear operaciones en batches de 400 (límite de Firestore: 500)
-    const inBatches=async(docs,op)=>{
-      let batch=fbDb.batch(),n=0;const commits=[];
-      docs.forEach(d=>{op(batch,d);if(++n===400){commits.push(batch.commit());batch=fbDb.batch();n=0;}});
-      if(n)commits.push(batch.commit());
-      await Promise.all(commits);
-    };
-    // 1) Anonimizar aportes a sharedFoods (quedan para la comunidad)
-    const mine=await fbDb.collection("sharedFoods").where("uploadedBy","==",uid).get();
-    await inBatches(mine.docs,(b,d)=>b.update(d.ref,{uploadedBy:"deleted"}));
-    // 2) Borrar subcolección months (los docs de subcolecciones NO se borran con el padre)
-    const months=await fbDb.collection("users").doc(uid).collection("months").get();
-    await inBatches(months.docs,(b,d)=>b.delete(d.ref));
-    // 3) Documento principal + entrada de leaderboard
-    await fbDb.collection("users").doc(uid).delete();
-    await fbDb.collection("leaderboard").doc(uid).delete();
-    // 4) Cuenta de Firebase Auth — puede exigir login reciente
-    try{
-      await fbUser.delete();
-    }catch(e){
-      if(e.code==="auth/requires-recent-login"){
-        showToast("Confirmá tu identidad para terminar","ok");
-        await fbUser.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
-        await fbUser.delete();
-      }else throw e;
-    }
-    // 5) Limpiar todo lo local y despedida
-    localStorage.clear();
-    _daysCache=null;
-    document.body.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;font-family:var(--font);background:var(--bg);color:var(--text)">
-      <div style="font-size:48px;margin-bottom:16px">👋</div>
-      <div style="font-size:20px;font-weight:600;margin-bottom:8px">Tu cuenta fue eliminada</div>
-      <div style="font-size:14px;color:var(--text3);line-height:1.6;max-width:300px">Todos tus datos fueron borrados de forma permanente. Gracias por haber usado la app. Si algún día querés volver, podés crear una cuenta nueva desde cero.</div>
-    </div>`;
-  }catch(e){
-    console.error("deleteMyAccount:",e);
-    showToast("Error al eliminar: "+(e.message||e.code||"desconocido"),"err");
-  }
 }
 
 // ─── OFFLINE / ONLINE ──────────────────────────────────────────────

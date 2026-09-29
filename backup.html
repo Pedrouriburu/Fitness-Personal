@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backup Firestore</title>
+<meta name="robots" content="noindex">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#0e0e10;--surface:#18181c;--text:#f0f0f0;--text2:#9090a0;--accent:#c8f564}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif;padding:24px 16px}
+main{max-width:480px;margin:0 auto}
+button{background:var(--accent);color:#0e0e10;border:none;border-radius:8px;padding:12px 16px;font-weight:600;width:100%;margin-top:12px;cursor:pointer;font-size:15px}
+button:disabled{opacity:.5}
+pre{background:var(--surface);padding:12px;border-radius:8px;white-space:pre-wrap;font-size:12px;color:var(--text2)}
+</style>
+</head>
+<body>
+<main>
+<h2>Backup completo de Firestore</h2>
+<p style="color:var(--text2)">Solo lectura: descarga un JSON con todo lo tuyo en <code>fitness-tracker-b46ad</code>
+(<code>users/{uid}</code> + <code>months</code>, y si las reglas todavía lo permiten, tu entrada de <code>leaderboard</code>
+y tus aportes a <code>sharedFoods</code>). No escribe nada.</p>
+<button id="go" onclick="run()">Iniciar sesión con Google y descargar</button>
+<pre id="log"></pre>
+</main>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyAW0Os38GwmR6uXacsrc--w1djnmUQzt5Y",
+  authDomain: "fitness-tracker-b46ad.firebaseapp.com",
+  projectId: "fitness-tracker-b46ad",
+  storageBucket: "fitness-tracker-b46ad.firebasestorage.app",
+  messagingSenderId: "143264606965",
+  appId: "1:143264606965:web:7cf0032b6a521f8cd473bc"
+});
+const db = firebase.firestore();
+const log = m => { document.getElementById("log").textContent += m + "\n"; };
+
+// Timestamps de Firestore → ISO para que el JSON sea legible y restaurable
+function plain(v){
+  if(v && typeof v.toDate === "function") return {_ts: v.toDate().toISOString()};
+  if(Array.isArray(v)) return v.map(plain);
+  if(v && typeof v === "object"){ const o = {}; for(const k in v) o[k] = plain(v[k]); return o; }
+  return v;
+}
+
+async function run(){
+  const btn = document.getElementById("go");
+  btn.disabled = true;
+  try{
+    const auth = firebase.auth();
+    const user = auth.currentUser || (await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())).user;
+    const uid = user.uid;
+    log("Sesión: " + (user.email || uid));
+    const out = {_backup: "fitness-tracker-firestore", _fecha: new Date().toISOString(), uid, users: null, months: {}, extra: {}};
+
+    const userRef = db.collection("users").doc(uid);
+    const doc = await userRef.get({source: "server"});
+    out.users = doc.exists ? plain(doc.data()) : null;
+    log("users/" + uid + ": " + (doc.exists ? Object.keys(doc.data()).length + " campos" : "no existe"));
+
+    const months = await userRef.collection("months").get({source: "server"});
+    months.forEach(m => { out.months[m.id] = plain(m.data()); });
+    const nDays = Object.values(out.months).reduce((a, m) => a + Object.keys(m.days || {}).length, 0);
+    log("months: " + months.size + " meses, " + nDays + " días");
+
+    // Opcionales: dejan de ser legibles cuando se deployan las reglas personales
+    try{
+      const lb = await db.collection("leaderboard").doc(uid).get({source: "server"});
+      out.extra.leaderboard = lb.exists ? plain(lb.data()) : null;
+      log("leaderboard: " + (lb.exists ? "ok" : "sin entrada"));
+    }catch(e){ log("leaderboard: no accesible (" + e.code + ")"); }
+    try{
+      const sf = await db.collection("sharedFoods").where("uploadedBy", "==", uid).get({source: "server"});
+      out.extra.sharedFoods = {}; sf.forEach(d => { out.extra.sharedFoods[d.id] = plain(d.data()); });
+      log("sharedFoods propios: " + sf.size);
+    }catch(e){ log("sharedFoods: no accesible (" + e.code + ")"); }
+
+    const d = new Date(), stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    const blob = new Blob([JSON.stringify(out, null, 1)], {type: "application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "firestore_backup_" + stamp + ".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    log("✓ Descargado " + a.download + " (" + Math.round(blob.size / 1024) + " KB). Guardalo fuera del teléfono.");
+  }catch(e){
+    log("✗ Error: " + (e.code || "") + " " + (e.message || e));
+  }finally{ btn.disabled = false; }
+}
+</script>
+</body>
+</html>

@@ -1,75 +1,72 @@
-# FitnessTracker — Contexto para Claude Code
+# FitnessTracker PERSONAL — Contexto para Claude Code
 
 ## Qué es
-App web tipo PWA, archivo HTML único (`FitnessTracker.html`, ~4700 líneas), sin frameworks ni build tools (solo Google Fonts y Firebase CDN). Persistencia en `localStorage` + sincronización a Firestore con sesión activa. Alojada en GitHub Pages.
+Versión **100% personal, un solo usuario (Pedro)** de FitnessTracker, forkeada en septiembre de 2026 del repo comercial `albap8668-sketch/Fitness`. El proyecto comercial está **pausado, no abandonado**: su repo (`Documents\fitness-tracker`) **no se toca**.
 
-- **Repo**: `albap8668-sketch/Fitness` (rama `main`) — **público**
-- **URL viva**: https://albap8668-sketch.github.io/Fitness/FitnessTracker.html
-- **Usuario**: Pedro, 20 años, Salta Argentina. Objetivo: pérdida de grasa + ganancia muscular. La app la usan también sus amigos (multi-usuario).
-- **Proyecto Firebase**: `fitness-tracker-b46ad`
-- **Admin UID** (hardcodeado en `ADMIN_UID` y en `firestore.rules`): `27kSUTAXhpg7NPO342S7XXPjwHn1`
+App web PWA, archivo HTML único (`FitnessTracker.html`, ~6.050 líneas), sin frameworks ni build tools (Google Fonts, Firebase compat CDN, html5-qrcode). Persistencia en `localStorage` + sync a Firestore con sesión activa. Alojada en GitHub Pages.
 
-## Decisión de arquitectura importante
-El repo es **público**: la API Key de Gemini **nunca va en el código fuente**. Vive solo en `localStorage` (`geminiKey`), ingresada desde Perfil, excluida de la sincronización y del backup JSON. Las claves de `firebaseConfig` sí están en el código — son públicas por diseño del SDK.
+- **Repo**: `albap8668-sketch/Fitness-Personal` (rama `main`) — **público** (Pages Free lo exige; y un repo privado igual publica un sitio público).
+- **URL viva**: https://albap8668-sketch.github.io/Fitness-Personal/FitnessTracker.html
+- **Carpeta local**: `Documents\fitness-personal`
+- **Proyecto Firebase**: `fitness-tracker-b46ad` — el MISMO que la comercial (conserva todo el historial). Único uid permitido: `27kSUTAXhpg7NPO342S7XXPjwHn1`.
 
-## MODELO DE DATOS (particionado por mes — NO asumir el modelo viejo)
-El historial diario **ya no vive en una clave única `days`**. Desde julio 2026:
+## Reglas que no se negocian
+1. **Contenido de terceros y datos personales → Firestore, como dato del usuario. Nunca en el código.** El sitio es público. Las rutinas y los modelos de nutrición de fuentes externas (aviso legal: uso personal sí, reproducción pública no) se cargan **solo con el importador de rutinas** (Gym → ⚙️ Rutinas → Importar con IA), que las guarda en `userRoutine`/`savedRoutines` en Firestore. **No hardcodear rutinas bajo ninguna circunstancia** — por eso se eliminó `ROUTINE_BASE`.
+2. La API key de Gemini vive solo en `localStorage.geminiKey` (excluida del sync y del backup). Sin backend ni Cloud Functions.
+3. `firebaseConfig` sí va en el código (es público por diseño del SDK).
+4. **No escribir en Firestore formas de datos que rompan la app comercial** (comparten documentos). Ej.: `profile.act` se sigue guardando aunque esta app no lo use.
 
-- **localStorage**: una clave por mes `days_YYYY-MM` (objeto `{fecha: datosDelDía}`) + índice `daysMonths` (array de meses existentes).
-- **Firestore**: subcolección `users/{uid}/months/{YYYY-MM}`, cada doc `{days: {...}, updatedAt}`. Evita el techo de 1MB/documento.
-- **`getDays()`** devuelve la vista completa fusionada (cache en memoria `_daysCache`, se arma una vez por sesión). Streak, gráficos, export y agregaciones la consumen igual que antes.
-- **`saveDays(allDays, [fechas])`** escribe y sube SOLO los meses de las fechas tocadas. Nunca usar `ss("days",...)` ni `syncToCloud("days",...)` — ya no existen call sites.
-- **Migración automática e idempotente** (`migrateDaysToMonths`): al detectar la clave vieja `days`, particiona, **verifica releyendo cada mes contra el original** y recién ahí borra la clave vieja. Si se interrumpe, reintenta desde cero en la próxima carga (las escrituras por mes son deterministas, no duplica). En la nube igual (`syncFromCloud`): batch atómico que escribe los docs de meses Y borra el campo `days` juntos.
-- **`SYNC_KEYS`** ya NO incluye `days`: `["profile","customFoods","customExercises","foodIdCounter","userRoutine","weightHistory","savedRoutines","rankingOptIn","dietConfig"]`. Los meses se sincronizan aparte (`syncMonthToCloud`; al reconectar, el handler `online` itera `getMonthList()`).
-- **Fechas**: `todayKey(d)` (hora LOCAL) es la única fuente de claves `YYYY-MM-DD` — NUNCA `toISOString().slice/split` para date-keys (bug UTC: el día cambiaba a las 21:00 en Argentina). `TODAY` es `let` y rota a medianoche vía `checkDayRollover`.
-- **Planificador de dieta**: `dietConfig` (comidas 2-6 con horarios, restricciones, favoritos, trainDays) configurable en Perfil → "Mi dieta". Motor unificado: `generateDayPlan(fecha)` (atajo "Planificar mañana" + regeneración por día) y `generateWeeklyPlan()` (7 días en UNA llamada, reintento de días faltantes ante JSON truncado, máx. 3/día). Planes en `mealPlans[fecha]` (localStorage); HOY muestra la próxima comida planificada con "Registrar tal cual" / "Registré otra cosa" — guía sin culpa.
-- Agregaciones separadas de la UI: `aggregateMonth("YYYY-MM")` y `aggregateYear("YYYY")`.
+## Mismo origen que la app comercial
+`/Fitness/` y `/Fitness-Personal/` comparten origen `albap8668-sketch.github.io` → en desktop comparten `localStorage`, IndexedDB (photoLibrary, cache de Firestore) y sesión de Firebase Auth. En iPhone cada PWA de inicio tiene su propio almacenamiento. El SW usa caches con prefijo `fitness-personal-` y solo limpia los suyos (el de la comercial es `fitness-v6`).
+
+## QUÉ SE ELIMINÓ respecto del original (no buscar estos módulos: ya no existen)
+| Eliminado | Qué había | Qué quedó |
+|---|---|---|
+| `sharedFoods` | `loadSharedFoods`, `searchSharedFoods`, `addToSharedFoods`, `verifySharedFoodMacros` (moderación con Gemini), `shareCustomFood`, `_sfCache`, badge ☁️ en búsqueda, botón ☁️ en Despensa, llamadas fire-and-forget desde chat IA / búsqueda IA / código de barras | Búsqueda = `LOCAL_DB` + Despensa (`getAllFoods`). `doSearch` ya no es async. `findLocalFood` busca solo en `getAllFoods()` |
+| Ranking / insignias | `updateLeaderboard`, `renderRanking`, `renderRankingList`, `setRankingMetric`, `computeRankingBadges`, `RANKING_METRICS`, colección `leaderboard/{uid}`, sección HTML en Progreso, `lastPRDate` | `currentWeekLabel()` se conserva (lo usan los insights semanales) |
+| Toggle de ranking | `rankingOptIn`, `toggleRankingOptIn`, checkbox en Perfil; sacado de `SYNC_KEYS` | El campo viejo puede seguir en el doc de Firestore; se ignora |
+| Mensajes comparativos | `maybeShowNudge`, `#nudge-box`, `nudgeShownDate` | — |
+| Borrado de cuenta | `deleteMyAccount`, "Zona peligrosa" en Perfil | — |
+| Estados vacíos con guía | Despensa vacía con explicación, Gym sin rutina con texto + botón a `openRoutineModal` (inexistente), "Registrá comidas esta semana", texto de login | Textos mínimos ("Sin alimentos", "Sin registros esta semana"); Gym sin rutina muestra solo "⚙️ Rutinas" (`openRoutineEditor`) |
+| `ADMIN_UID` | Constante del admin de sharedFoods | El uid vive solo en `firestore.rules` |
+| `ROUTINE_BASE` + `recoverMainRoutine` | Rutina de 5 días hardcodeada + botón "Recuperar original" | La rutina está en Firestore. "Resetear" ahora dice que borra la rutina principal |
+| Selector "Actividad base" (`p-act`) | Factor multiplicador del BMR | Ver TDEE abajo |
+| Onboarding | Nunca existió | — |
+
+El **streak** (`calcStreak`/`renderStreak`) se conserva: es personal.
+
+## Energía y macros — ÚNICA definición (bloque "ENERGÍA Y MACROS" en el JS)
+- `calcTDEE(p, pasosKcal, ejercicioKcal)` = BMR (Mifflin-St Jeor) + pasos + ejercicio. **Sin factor de actividad** (antes coexistían 3 fórmulas: HOY `BMR+actividad`, Perfil `BMR×act`, planner `BMR×act+250`).
+- HOY / Semana / Mes (`getDayTargets`) → actividad **registrada** del día.
+- Perfil (`showMacrosResult`) y planificador (`planTargets`) → actividad **típica** (`typicalActivity()`: promedio de los últimos 28 días; si no hay ejercicio registrado, 300 kcal).
+- `macroTargets(p, tdee, train)`: objetivo (déficit −400 / superávit +200), proteína, grasas 25 % de kcal, carbos = resto.
+- `protTarget(p, train)`: si `profile.grasa` (% grasa, opcional) → sobre masa magra `leanMass(p)` con 2,4/2,7 g/kg; si no, sobre peso total con 2,0/2,3 g/kg (`PROT_G_KG`).
+- Perfil: peso, % grasa y objetivo editables. Altura/edad/sexo en el desplegable "Datos fijos", precargados desde el `profile` de Firestore. Los defaults del código son genéricos (70 kg/170 cm/25 años) a propósito.
+
+## Modelo de datos (sin cambios respecto de la comercial)
+- `users/{uid}`: claves de `SYNC_KEYS` = `["profile","customFoods","customExercises","foodIdCounter","userRoutine","weightHistory","savedRoutines","dietConfig"]`.
+- `users/{uid}/months/{YYYY-MM}`: historial particionado `{days, updatedAt}`. localStorage: `days_YYYY-MM` + índice `daysMonths`. `getDays()` / `saveDays(allDays,[fechas])`.
+- `todayKey(d)` es la única fuente de fechas (hora local; nunca `toISOString` para claves).
+- `mealPlans`, `weeklyInsights`, timers y `photoLibrary` (IndexedDB) son solo locales.
+
+## Conservado intacto
+Registro de comidas (entrada unificada + IA conversacional, foto de plato, etiqueta, código de barras con Open Food Facts, recetas, `photoLibrary` con dHash), gym (rutinas múltiples, DS por serie, volumen, PRs, 1RM Epley, cronómetros por timestamp, RPE, importación de rutinas por texto/foto/PDF/Excel/CSV), vistas semana/mes/año, historial de peso, `dietConfig` + meal planning, CSV, backup JSON local, auto-reparación de modelos Gemini (`geminiPost`/`_geminiAutoRepair`, serie 3.x), compresión de imágenes.
 
 ## Firestore
-- SDK compat v10.13.0 vía CDN — NO modular/npm. Persistencia offline habilitada (`enablePersistence`).
-- Colecciones:
-  - `users/{uid}` — datos personales (claves de SYNC_KEYS, merge strategy)
-  - `users/{uid}/months/{YYYY-MM}` — historial particionado
-  - `leaderboard/{uid}` — ranking semanal del grupo (lectura: cualquier autenticado)
-  - `sharedFoods/{docId}` — base de alimentos comunitaria: `{nombre, cal, prot, carb, fat, cat, porciones?, uploadedBy, uploadedAt, source, status}`. `approved` visible para todos; `pending` solo para el que lo subió y el admin. Barcode/Gemini/label/recipe se auto-aprueban; manual pasa por verificación de macros con Gemini antes de compartir.
-- Auth: `signInWithPopup` (NO redirect — falló en iOS PWA standalone).
-- Reglas en `firestore.rules` (deployar con `firebase deploy --only firestore:rules --project fitness-tracker-b46ad`).
-
-## Features principales
-- **HOY**: registro conversacional con IA (campo "Contá qué comiste" + dictado `webkitSpeechRecognition`, parseo Gemini a JSON estricto con confianza por ítem, modal de confirmación de un toque, doble destino: día + Despensa/sharedFoods con porciones aprendidas). Buscador local (~470 alimentos con cortes de carne USDA y regionales de toda Argentina con tags de sinónimos y metadato `reg`), sharedFoods (badge ☁️), foto de plato y etiqueta nutricional (→ Despensa), código de barras (Open Food Facts, auto-comparte).
-- **GYM**: rutinas múltiples, cronómetros basados en timestamp que sobreviven suspensión de la PWA (descanso: `restTimerEnd` en localStorage, beep Web Audio desbloqueado en el tap inicial, vibración si existe, notificación vía SW en background; sesión: `gymSessionStart`, botón "Finalizar sesión", auto-cierre a las 4h sin actividad). Pill flotante visible en cualquier pestaña.
-- **SEMANA ("Progreso")**: selector Semana/Mes/Año. Mes: calendario + stats + gráficos diarios. Año: 12 barras mensuales (kcal prom, días entrenados, volumen gym) + evolución de peso.
-- **DESPENSA**: CRUD, botón ☁️ "compartir con todos", receta calculadora (🧪), importación desde etiqueta.
-- **PERFIL**: BMR/TDEE, login Google (muestra UID), API Key Gemini, export CSV, **backup completo JSON** (`exportarBackupJSON`, excluye geminiKey), **Zona peligrosa: Eliminar mi cuenta** (`deleteMyAccount`: confirmación escribiendo ELIMINAR, anonimiza `uploadedBy:"deleted"` en sharedFoods, borra subcolección months explícitamente —Firestore no borra subcolecciones solo—, borra doc de usuario + leaderboard, `user.delete()` con manejo de `auth/requires-recent-login` vía `reauthenticateWithPopup`, `localStorage.clear()` y despedida).
-
-## Funciones clave
-- `ls(k,d)` / `ss(k,v)` — helpers localStorage
-- `getDays()` / `saveDays(allDays,[fechas])` / `getDayData(date)` / `saveDayData(date,data)`
-- `aggregateMonth(ym)` / `aggregateYear(yyyy)` — agregación pura, sin UI
-- `getAllFoods()` / `searchFoods(q)` — incluye tags de sinónimos y porciones aprendidas (`_gu/_gpU/_allowed`)
-- `loadSharedFoods()` (cache 5 min) / `addToSharedFoods(food,source)` / `shareCustomFood(id)`
-- `parseNaturalFood()` / `confirmNLItems()` — registro conversacional
-- `geminiPost(key,body)` — recorre `GEMINI_MODELS` (serie 3.x) con fallback en 404/503/429; si TODOS dan 404 se **auto-repara** vía ListModels y guarda el mejor flash en `localStorage.geminiModelOverride` (los 2.x murieron jun 2026 — no reintroducirlos). Errores al usuario via `geminiErrorMsg(res)`. Diagnóstico: botón "Probar conexión IA" en Perfil (`testGeminiConnection`)
-- `renderBarChart(id,data,series,unit)` — generalizado a N grupos (7/31/12), flag `isToday` por dato
-- `showToast(msg,type)` — auto-oculta 2,5s (oculta con opacity+visibility, no solo transform: en iPhone con notch el translateY no alcanzaba)
+- Reglas (`firestore.rules`): solo `27kSUTAXhpg7NPO342S7XXPjwHn1` lee/escribe `users/{uid}/**`; todo lo demás denegado. Deploy: `firebase deploy --only firestore:rules --project fitness-tracker-b46ad`.
+- ⚠️ Mismo proyecto que la comercial: estas reglas apagan `sharedFoods`/`leaderboard` y dejan sin acceso a los otros usuarios (no borra datos). Para retomar la comercial, re-deployar las reglas desde su repo.
+- `backup.html`: página de solo lectura que descarga `users/{uid}` + `months` (+ `leaderboard` y `sharedFoods` propios si las reglas todavía lo permiten) como JSON. Usarla antes de cualquier cambio riesgoso.
+- Auth: `signInWithPopup` (redirect falla en PWA iOS). `localhost` y `albap8668-sketch.github.io` ya son dominios autorizados.
 
 ## Service Worker / PWA
-- `sw.js` v6, cache `fitness-v6`, network-first, auto-update con recarga silenciosa, handler `notificationclick`.
+`sw.js` v1, cache `fitness-personal-v1`, network-first, base `/Fitness-Personal/`. `manifest.json` con `id`/`scope`/`start_url` en `/Fitness-Personal/`, nombre "Fitness Personal". Al cambiar assets, subir la versión del cache.
 
-## Lo que se intentó y NO funcionó
-- Supabase: falló en Safari iOS. No reintentar.
-- `signInWithRedirect`: volvía a Safari en vez de a la PWA. Usar `signInWithPopup`.
-- Extraer la base de alimentos a `foods-db.json`: evaluado y descartado por ahora (acceso síncrono + single-file deliberado). Reconsiderar si supera ~1000 entradas.
-
-## Cloud Functions
-Código listo pero pausado hasta activar plan Blaze (ver memoria del proyecto).
+## Lo que se intentó y NO funcionó (heredado)
+- Supabase: falló en Safari iOS. `signInWithRedirect`: volvía a Safari. Extraer la base de alimentos a JSON: descartado por ahora.
 
 ## División de responsabilidades
-**Claude Code hace:** todo el código, git add/commit, actualizar este archivo cuando cambia el modelo de datos.
+**Claude Code:** código, commits, mantener este archivo al día.
+**Pedro:** `git push` (pasarle siempre el comando exacto: `cd Documents\fitness-personal` → `git push`), deploy de reglas, consola de Firebase, API key en Perfil, pruebas en iPhone real.
 
-**Pedro hace manualmente:**
-1. `git push` desde PowerShell (pasarle siempre el comando exacto: `cd Documents\fitness-tracker` → `git push`).
-2. `firebase deploy --only firestore:rules --project fitness-tracker-b46ad` cuando cambian las reglas.
-3. Consola de Firebase para configuración.
-4. API Key de Gemini en la pestaña Perfil (nunca en chat ni código).
-5. Probar en iPhone real.
+## Historial
+`RESUMEN_SESION.md` es historia del proyecto comercial (anterior al fork).
