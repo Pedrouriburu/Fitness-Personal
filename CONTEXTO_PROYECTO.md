@@ -3,7 +3,7 @@
 ## Qué es
 Versión **100% personal, un solo usuario (Pedro)** de FitnessTracker, forkeada en septiembre de 2026 del repo comercial `albap8668-sketch/Fitness`. El proyecto comercial está **pausado, no abandonado**: su repo (`Documents\fitness-tracker`) **no se toca**.
 
-App web PWA, archivo HTML único (`FitnessTracker.html`, ~6.050 líneas), sin frameworks ni build tools (Google Fonts, Firebase compat CDN, html5-qrcode). Persistencia en `localStorage` + sync a Firestore con sesión activa. Alojada en GitHub Pages.
+App web PWA, archivo HTML único (`FitnessTracker.html`, ~6.140 líneas), sin frameworks ni build tools (Google Fonts, Firebase compat CDN, html5-qrcode). Persistencia en `localStorage` + sync a Firestore con sesión activa. Alojada en GitHub Pages.
 
 - **Repo**: `albap8668-sketch/Fitness-Personal` (rama `main`) — **público** (Pages Free lo exige; y un repo privado igual publica un sitio público).
 - **URL viva**: https://albap8668-sketch.github.io/Fitness-Personal/FitnessTracker.html
