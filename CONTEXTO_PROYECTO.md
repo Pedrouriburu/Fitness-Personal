@@ -1,12 +1,12 @@
 # FitnessTracker PERSONAL — Contexto para Claude Code
 
 ## Qué es
-Versión **100% personal, un solo usuario (Pedro)** de FitnessTracker, forkeada en septiembre de 2026 del repo comercial `albap8668-sketch/Fitness`. El proyecto comercial está **pausado, no abandonado**: su repo (`Documents\fitness-tracker`) **no se toca**.
+Versión **100% personal, un solo usuario (Pedro)** de FitnessTracker, forkeada en septiembre de 2026 del repo comercial `Pedrouriburu/Fitness`. El proyecto comercial está **pausado, no abandonado**: su repo (`Documents\fitness-tracker`) **no se toca**.
 
 App web PWA, archivo HTML único (`FitnessTracker.html`, ~6.140 líneas), sin frameworks ni build tools (Google Fonts, Firebase compat CDN, html5-qrcode). Persistencia en `localStorage` + sync a Firestore con sesión activa. Alojada en GitHub Pages.
 
-- **Repo**: `albap8668-sketch/Fitness-Personal` (rama `main`) — **público** (Pages Free lo exige; y un repo privado igual publica un sitio público).
-- **URL viva**: https://albap8668-sketch.github.io/Fitness-Personal/FitnessTracker.html
+- **Repo**: `Pedrouriburu/Fitness-Personal` (rama `main`) — **público** (Pages Free lo exige; y un repo privado igual publica un sitio público).
+- **URL viva**: https://pedrouriburu.github.io/Fitness-Personal/FitnessTracker.html
 - **Carpeta local**: `Documents\fitness-personal`
 - **Proyecto Firebase**: `fitness-tracker-b46ad` — el MISMO que la comercial (conserva todo el historial). Único uid permitido: `27kSUTAXhpg7NPO342S7XXPjwHn1`.
 
@@ -17,7 +17,7 @@ App web PWA, archivo HTML único (`FitnessTracker.html`, ~6.140 líneas), sin fr
 4. **No escribir en Firestore formas de datos que rompan la app comercial** (comparten documentos). Ej.: `profile.act` se sigue guardando aunque esta app no lo use.
 
 ## Mismo origen que la app comercial
-`/Fitness/` y `/Fitness-Personal/` comparten origen `albap8668-sketch.github.io` → en desktop comparten `localStorage`, IndexedDB (photoLibrary, cache de Firestore) y sesión de Firebase Auth. En iPhone cada PWA de inicio tiene su propio almacenamiento. El SW usa caches con prefijo `fitness-personal-` y solo limpia los suyos (el de la comercial es `fitness-v6`).
+`/Fitness/` y `/Fitness-Personal/` comparten origen `pedrouriburu.github.io` → en desktop comparten `localStorage`, IndexedDB (photoLibrary, cache de Firestore) y sesión de Firebase Auth. En iPhone cada PWA de inicio tiene su propio almacenamiento. El SW usa caches con prefijo `fitness-personal-` y solo limpia los suyos (el de la comercial es `fitness-v6`).
 
 ## QUÉ SE ELIMINÓ respecto del original (no buscar estos módulos: ya no existen)
 | Eliminado | Qué había | Qué quedó |
@@ -56,7 +56,7 @@ Registro de comidas (entrada unificada + IA conversacional, foto de plato, etiqu
 - Reglas (`firestore.rules`): solo `27kSUTAXhpg7NPO342S7XXPjwHn1` lee/escribe `users/{uid}/**`; todo lo demás denegado. Deploy: `firebase deploy --only firestore:rules --project fitness-tracker-b46ad`.
 - ⚠️ Mismo proyecto que la comercial: estas reglas apagan `sharedFoods`/`leaderboard` y dejan sin acceso a los otros usuarios (no borra datos). Para retomar la comercial, re-deployar las reglas desde su repo.
 - `backup.html`: página de solo lectura que descarga `users/{uid}` + `months` (+ `leaderboard` y `sharedFoods` propios si las reglas todavía lo permiten) como JSON. Usarla antes de cualquier cambio riesgoso.
-- Auth: `signInWithPopup` (redirect falla en PWA iOS). `localhost` y `albap8668-sketch.github.io` ya son dominios autorizados.
+- Auth: `signInWithPopup` (redirect falla en PWA iOS). `localhost` y `pedrouriburu.github.io` tienen que estar autorizados en Firebase Auth (el usuario de GitHub cambió de `albap8668-sketch` a `Pedrouriburu` en noviembre de 2026).
 
 ## Service Worker / PWA
 `sw.js` v1, cache `fitness-personal-v1`, network-first, base `/Fitness-Personal/`. `manifest.json` con `id`/`scope`/`start_url` en `/Fitness-Personal/`, nombre "Fitness Personal". Al cambiar assets, subir la versión del cache.
