@@ -1,7 +1,9 @@
 # Fitness Personal
 
-Versión personal (un solo usuario) de FitnessTracker. Ver `CONTEXTO_PROYECTO.md`.
+Single-user version of my [Fitness Tracker](https://github.com/Pedrouriburu/Fitness), adapted to my own training: one unified calorie target (TDEE) and protein targets based on lean mass, without the multi-user features.
 
-App: https://albap8668-sketch.github.io/Fitness-Personal/FitnessTracker.html
+**Live app:** https://pedrouriburu.github.io/Fitness-Personal/FitnessTracker.html
 
-El código es público; los datos (historial, rutinas, perfil) viven en Firestore y solo los puede leer su dueño.
+The code is public; the data lives in Firestore and only its owner can read it.
+
+Built with Claude Code.
